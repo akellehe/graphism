@@ -24,13 +24,12 @@ class Node(object):
     
     """
     __name = None
-    __parents = set([])
-    __children = set([])
-    __connections = {}
     __degree = 0L
+    __parents = None
+    __children = None
+    __connections = None
     __propagation_function = None
-        
-        
+    
     
     def __init__(self, parents=None, children=None, name=None, directed=False):
         """
@@ -39,6 +38,10 @@ class Node(object):
         :param list(graphism.node.Node) parents: A list of parent nodes. They are added as parents to this node.
         :param list(graphism.node.Node) children: A list of child nodes. They are added as children to this node.
         """
+        self.__parents = set([])
+        self.__children = set([])
+        self.__connections = {}
+        
         if parents:
             for p in parents:
                 self.add_parent(p)
@@ -76,6 +79,14 @@ class Node(object):
                 self.__children.remove(wr)
         return cleanup
 
+    def __add_connection(self, name, conn):
+        if name in self.__connections:
+            self.__connections[name].multiplicity += 1L
+        else:
+            self.__connections[name] = conn
+            
+        self.__degree += 1L
+
     def add_parent(self, parent_node):
         """
         Adds a parent node to the set of parents. If the node already exists the 
@@ -83,21 +94,23 @@ class Node(object):
         
         :rtype long: The multiplicity of the node.
         """
-        start = len(self.__parents)
         self.__parents.add(weakref.ref(parent_node))
-        finish = len(self.__parents)
-        if finish - start:
-            self.__connections[parent_node.name()] = Connection(node=parent_node, 
-                                                                multiplicity=1L, 
-                                                                type='parent', 
-                                                                cleanup=self.__get_cleanup_callback(parent_node))
-        else:
-            self.__connections[parent_node.name()].multiplicity += 1L
-            
-        self.__degree += 1L
-        
+        conn = Connection(node=parent_node, 
+                          multiplicity=1L, 
+                          type='parent', 
+                          cleanup=self.__get_cleanup_callback(parent_node))
+
+        self.__add_connection(parent_node.name(), conn)
+                    
         return self.__connections[parent_node.name()].multiplicity
         
+    def connections(self):
+        """
+        Returns a dict of connections associated with this node.
+        
+        :rtype dict(str, graphism.node.Connection):
+        """
+        return self.__connections
         
     def add_child(self, child_node):
         """
@@ -105,19 +118,14 @@ class Node(object):
         multiplicity of the node is increased.
         
         """
-        start = len(self.__children)
-        self.__children.add(child_node)
-        finish = len(self.__children)
-        if finish - start:
-            self.__connections[child_node.name()] = Connection(node=child_node,
-                                                               multiplicity=1L,
-                                                               type='child',
-                                                               cleanup=self.__get_cleanup_callback(child_node))
-        else:
-            self.__connections[child_node.name()].multiplicity += 1
+        self.__children.add(weakref.ref(child_node))
+        conn = Connection(node=child_node,
+                          multiplicity=1L,
+                          type='child',
+                          cleanup=self.__get_cleanup_callback(child_node))
             
-        self.__degree += 1L
-            
+        self.__add_connection(child_node.name(), conn)
+        
         return self.__connections[child_node.name()].multiplicity
     
     def degree(self):
@@ -181,3 +189,22 @@ class Node(object):
         else:
             return multiplicity / degree
         
+    def is_child_of(self, node):
+        """
+        Test whether or not self is a child node of node.
+        
+        :param graphism.node.Node node: The potential parent.
+        
+        :rtype bool:
+        """
+        return weakref.ref(node) in self.__parents
+    
+    def is_parent_of(self, node):
+        """
+        Test whether or not self is a parent node of node.
+        
+        :param graphism.node.Node node: The potential child.
+        
+        :rtype bool:
+        """
+        return weakref.ref(node) in self.__children
