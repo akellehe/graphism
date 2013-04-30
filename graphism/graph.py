@@ -30,6 +30,7 @@ class Node(object):
     __degree = 0L
     __propagation_function = None
         
+        
     
     def __init__(self, parents=None, children=None, name=None, directed=False):
         """
