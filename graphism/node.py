@@ -1,6 +1,7 @@
 import time
 import random
 import weakref
+import sys
 
 class Connection(object):
     """
@@ -11,8 +12,18 @@ class Connection(object):
     multiplicity = 0
     type = None
     
-    def __init__(self, node=None, multiplicity=0L, type=None, cleanup=lambda x: None):
+    def __init__(self, node=None, multiplicity=0L, type=None, target=None):
         
+        target = weakref.ref(target)
+        def cleanup(wr): 
+            sys.stderr.write("Cleaning up weakref: %s\n" % wr)
+            sys.stderr.flush()
+            conn = target.remove_connection_by_name(node.name())
+            if conn.type == 'parent':
+                target.remove_parent_ref(wr)
+            elif conn.type == 'child':
+                target.remove_child_ref(wr)
+                        
         self.node = weakref.ref(node, cleanup)
         self.multiplicity = multiplicity
         self.type = type
@@ -52,7 +63,7 @@ class Node(object):
             self.__name = name
         else:
             self.__name = str(random.random()) + str(time.time())
-           
+
     
     def name(self):
         """
@@ -61,23 +72,6 @@ class Node(object):
         """
         return self.__name
 
-    def __get_cleanup_callback(self, node):
-        """
-        Returns a callback that cleans up local references to the given node when it is 
-        cleaned up.
-        
-        :param graphism.graph.node.Node node: The node to clean up.
-        
-        :rtype function:
-        """
-        def cleanup(wr): 
-            conn = self.__connections.pop(node.name())
-            self.__degree -= node.degree()
-            if conn.type == 'parent':
-                self.__parents.remove(wr)
-            elif conn.type == 'child':
-                self.__children.remove(wr)
-        return cleanup
 
     def __add_connection(self, name, conn):
         if name in self.__connections:
@@ -87,6 +81,25 @@ class Node(object):
             
         self.__degree += 1L
 
+    def remove_connection_by_name(self, name):
+        if name in self.__connections:
+            self.__degree -= 1
+            return self.__connections.pop(name)
+
+    def remove_parent_ref(self, wr):
+        """
+        Removes a weakref from the parent list.
+        
+        """
+        self.__parents.remove(wr)
+        
+    def remove_child_ref(self, wr):
+        """
+        Removes a weakref from the child list.
+        
+        """
+        self.__children.remove(wr)
+
     def add_parent(self, parent_node):
         """
         Adds a parent node to the set of parents. If the node already exists the 
@@ -94,11 +107,17 @@ class Node(object):
         
         :rtype long: The multiplicity of the node.
         """
-        self.__parents.add(weakref.ref(parent_node))
+        def cleanup(wr):
+            sys.stderr.write("Cleaning up weakref...\n")
+            sys.stderr.flush()
+            self.remove_parent_ref(wr) 
+            self.remove_connection_by_name(wr().name())
+            
+        self.__parents.add(weakref.ref(parent_node, cleanup))
         conn = Connection(node=parent_node, 
                           multiplicity=1L, 
-                          type='parent', 
-                          cleanup=self.__get_cleanup_callback(parent_node))
+                          type='parent',
+                          target=self)
 
         self.__add_connection(parent_node.name(), conn)
                     
@@ -118,11 +137,17 @@ class Node(object):
         multiplicity of the node is increased.
         
         """
-        self.__children.add(weakref.ref(child_node))
+        def cleanup(wr):
+            sys.stderr.write("Cleaning up weakref...\n")
+            sys.stderr.flush()
+            self.remove_parent_ref(wr) 
+            self.remove_connection_by_name(wr().name())
+            
+        self.__children.add(weakref.ref(child_node, cleanup))
         conn = Connection(node=child_node,
                           multiplicity=1L,
                           type='child',
-                          cleanup=self.__get_cleanup_callback(child_node))
+                          target=self)
             
         self.__add_connection(child_node.name(), conn)
         

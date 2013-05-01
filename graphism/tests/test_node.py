@@ -1,5 +1,6 @@
 import unittest
 import random 
+import time
 
 from graphism.tests import TestApi
 
@@ -44,3 +45,27 @@ class NodeTest(TestApi):
         for n in to_add:
             random.choice([target.add_child, target.add_parent])(n)
         assert len(target.connections().keys()) == target.degree()
+
+    def test_cleanup(self):
+        target = Node()
+        to_clean = [Node(), Node(), Node()]
+        not_to_clean = [Node(), Node()]
+        for n in to_clean + not_to_clean:
+            random.choice([target.add_parent, target.add_child])(n)
+            
+        assert len(target.connections().keys()) == 5
+        assert target.degree() == 5
+        
+        for n in to_clean:
+            to_clean.remove(n)
+            del n
+        
+        print "connections: %s" % len(target.connections().keys())
+        print "degree:      %s" % target.degree()
+        
+        assert len(target.connections().keys()) == 2
+        assert target.degree() == 2
+
+if __name__ == '__main__':
+    unittest.main()
+            
