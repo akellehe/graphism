@@ -40,8 +40,18 @@ class NodeTest(TestApi):
         assert parent.name() in child.edges()
         assert child.name() in parent.edges()
         
-        assert parent.degree() == 2
-        assert child.degree() == 2
+        assert parent.degree() == 2L
+        assert child.degree() == 2L
+        
+        parent = Node()
+        child = Node()
+        parent.add_child(child)
+        
+        assert parent.degree() == 1L
+        assert child.degree() == 1L
+        
+        assert child.is_child_of(parent)
+        assert parent.is_parent_of(child)
         
     def test_degree(self):
         graph = Graph()
@@ -158,6 +168,7 @@ class NodeTest(TestApi):
         
         assert child.degree() == 0L, "Child degree is: %s" % child.degree()
         
+    
 
 if __name__ == '__main__':
     unittest.main()
