@@ -9,23 +9,23 @@ class Edge(object):
     
     """
     node = None
-    multiplicity = 0
+    multiplicity = None
     type = None
     
-    def __init__(self, origin=None, multiplicity=0L, type=None, dest=None):
-        self.origin = weakref.ref(origin)                        
-        self.dest = weakref.ref(dest)
+    def __init__(self, origin=None, multiplicity=1L, type=None, dest=None):
+        assert isinstance(origin, weakref.ref)
+        assert isinstance(dest, weakref.ref)
+        
+        self.origin = origin                   
+        self.dest = dest
         self.multiplicity = multiplicity
         self.type = type
         
-        self.origin().degree(1)
-        self.dest().degree(1)
-    
-    def __del__(self):
-        sys.stderr.write("Del called on an Edge")
-        self.origin().degree(-1)
-        self.dest().degree(-1)
+        self.__origin_name = origin().name()
+        self.__dest_name = dest().name()
         
+        origin().add_edge(dest().name(), self)
+        dest().add_edge(origin().name(), self)
 
 class Node(object):
     """
@@ -70,17 +70,17 @@ class Node(object):
         """
         return self.__name
 
-
-    def __add_edge(self, name, edge):
+    def add_edge(self, name, edge):
         if name in self.__edges:
-            self.__edges[name].multiplicity += 1L
+            self.__edges[name].multiplicity += 0.5
         else:
             self.__edges[name] = edge
+        self.degree(1L)
 
-    def remove_edge_by_name(self, name):
+    def remove_all_edges_by_name(self, name):
         if name in self.__edges:
             edge = self.__edges.pop(name)
-            del edge
+            self.degree(-1L*edge.multiplicity)
 
     def remove_parent_ref(self, wr):
         """
@@ -101,23 +101,38 @@ class Node(object):
         Adds a parent node to the set of parents. If the node already exists the 
         multiplicity of the node is increased.
         
-        :rtype long: The multiplicity of the node.
+        :rtype long: The multiplicity of the edge to parent_node.
         """
         node_name = parent_node.name()
+        weakself = weakref.ref(self)
         def cleanup(wr):
-            self.remove_parent_ref(wr) 
-            self.remove_edge_by_name(node_name)
-            sys.stderr.write("Removing a parent ref...\n")
+            weakself().remove_parent_ref(wr) 
+            weakself().remove_all_edges_by_name(node_name)
             
         self.__parents.add(weakref.ref(parent_node, cleanup))
         
-        edge = Edge(origin=parent_node, 
-                    multiplicity=1L, 
-                    type='parent',
-                    dest=self)
-
-        self.__add_edge(node_name, edge)
+        edge = Edge(origin=weakref.ref(parent_node), 
+                    dest=weakref.ref(self))
                     
+        return self.__edges[node_name].multiplicity
+    
+    def add_child(self, child_node):
+        """
+        Adds a child node to the set of children. If the node already exists the
+        multiplicity of the node is increased.
+        
+        """
+        node_name = child_node.name()
+        weakself = weakref.ref(self)
+        def cleanup(wr):
+            weakself().remove_child_ref(wr) 
+            weakself().remove_all_edges_by_name(node_name)
+            
+        self.__children.add(weakref.ref(child_node, cleanup))
+        
+        edge = Edge(origin=weakref.ref(self),
+                    dest=weakref.ref(child_node))
+
         return self.__edges[node_name].multiplicity
         
     def edges(self):
@@ -127,30 +142,7 @@ class Node(object):
         :rtype dict(str, graphism.node.Edge):
         """
         return self.__edges
-        
-    def add_child(self, child_node):
-        """
-        Adds a child node to the set of children. If the node already exists the
-        multiplicity of the node is increased.
-        
-        """
-        node_name = child_node.name()
-        def cleanup(wr):
-            self.remove_child_ref(wr) 
-            sys.stderr.write("Removing a child ref...\n")
-            self.remove_edge_by_name(node_name)
-            
-        self.__children.add(weakref.ref(child_node, cleanup))
-        
-        edge = Edge(origin=self,
-                    multiplicity=1L,
-                    type='child',
-                    dest=child_node)
-            
-        self.__add_edge(node_name, edge)
-        
-        return self.__edges[node_name].multiplicity
-    
+
     def degree(self, to_add=None):
         """
         Returns the current degree of the node.
@@ -209,8 +201,8 @@ class Node(object):
         conn = self.__edges[to_node.name()]
         multiplicity = conn.multiplicity
         degree = self.degree()
-        if degree == 0:
-            return 0
+        if degree == 0L:
+            return 0L
         else:
             return multiplicity / degree
         
