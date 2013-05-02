@@ -3,30 +3,28 @@ import random
 import weakref
 import sys
 
-class Connection(object):
+class Edge(object):
     """
-    Represents a connection between the node containing the connection and a parent or child node.
+    Represents a Edge between the node containing the Edge and a parent or child node.
     
     """
     node = None
     multiplicity = 0
     type = None
     
-    def __init__(self, node=None, multiplicity=0L, type=None, target=None):
-        
-        target = weakref.ref(target)
-        def cleanup(wr): 
-            sys.stderr.write("Cleaning up weakref: %s\n" % wr)
-            sys.stderr.flush()
-            conn = target.remove_connection_by_name(node.name())
-            if conn.type == 'parent':
-                target.remove_parent_ref(wr)
-            elif conn.type == 'child':
-                target.remove_child_ref(wr)
-                        
-        self.node = weakref.ref(node, cleanup)
+    def __init__(self, origin=None, multiplicity=0L, type=None, dest=None):
+        self.origin = weakref.ref(origin)                        
+        self.dest = weakref.ref(dest)
         self.multiplicity = multiplicity
         self.type = type
+        
+        self.origin().degree(1)
+        self.dest().degree(1)
+    
+    def __del__(self):
+        sys.stderr.write("Del called on an Edge")
+        self.origin().degree(-1)
+        self.dest().degree(-1)
         
 
 class Node(object):
@@ -38,7 +36,7 @@ class Node(object):
     __degree = 0L
     __parents = None
     __children = None
-    __connections = None
+    __edges = None
     __propagation_function = None
     
     
@@ -51,7 +49,7 @@ class Node(object):
         """
         self.__parents = set([])
         self.__children = set([])
-        self.__connections = {}
+        self.__edges = {}
         
         if parents:
             for p in parents:
@@ -73,18 +71,16 @@ class Node(object):
         return self.__name
 
 
-    def __add_connection(self, name, conn):
-        if name in self.__connections:
-            self.__connections[name].multiplicity += 1L
+    def __add_edge(self, name, edge):
+        if name in self.__edges:
+            self.__edges[name].multiplicity += 1L
         else:
-            self.__connections[name] = conn
-            
-        self.__degree += 1L
+            self.__edges[name] = edge
 
-    def remove_connection_by_name(self, name):
-        if name in self.__connections:
-            self.__degree -= 1
-            return self.__connections.pop(name)
+    def remove_edge_by_name(self, name):
+        if name in self.__edges:
+            edge = self.__edges.pop(name)
+            del edge
 
     def remove_parent_ref(self, wr):
         """
@@ -107,29 +103,30 @@ class Node(object):
         
         :rtype long: The multiplicity of the node.
         """
+        node_name = parent_node.name()
         def cleanup(wr):
-            sys.stderr.write("Cleaning up weakref...\n")
-            sys.stderr.flush()
             self.remove_parent_ref(wr) 
-            self.remove_connection_by_name(wr().name())
+            self.remove_edge_by_name(node_name)
+            sys.stderr.write("Removing a parent ref...\n")
             
         self.__parents.add(weakref.ref(parent_node, cleanup))
-        conn = Connection(node=parent_node, 
-                          multiplicity=1L, 
-                          type='parent',
-                          target=self)
+        
+        edge = Edge(origin=parent_node, 
+                    multiplicity=1L, 
+                    type='parent',
+                    dest=self)
 
-        self.__add_connection(parent_node.name(), conn)
+        self.__add_edge(node_name, edge)
                     
-        return self.__connections[parent_node.name()].multiplicity
+        return self.__edges[node_name].multiplicity
         
-    def connections(self):
+    def edges(self):
         """
-        Returns a dict of connections associated with this node.
+        Returns a dict of Edges associated with this node.
         
-        :rtype dict(str, graphism.node.Connection):
+        :rtype dict(str, graphism.node.Edge):
         """
-        return self.__connections
+        return self.__edges
         
     def add_child(self, child_node):
         """
@@ -137,28 +134,31 @@ class Node(object):
         multiplicity of the node is increased.
         
         """
+        node_name = child_node.name()
         def cleanup(wr):
-            sys.stderr.write("Cleaning up weakref...\n")
-            sys.stderr.flush()
-            self.remove_parent_ref(wr) 
-            self.remove_connection_by_name(wr().name())
+            self.remove_child_ref(wr) 
+            sys.stderr.write("Removing a child ref...\n")
+            self.remove_edge_by_name(node_name)
             
         self.__children.add(weakref.ref(child_node, cleanup))
-        conn = Connection(node=child_node,
-                          multiplicity=1L,
-                          type='child',
-                          target=self)
-            
-        self.__add_connection(child_node.name(), conn)
         
-        return self.__connections[child_node.name()].multiplicity
+        edge = Edge(origin=self,
+                    multiplicity=1L,
+                    type='child',
+                    dest=child_node)
+            
+        self.__add_edge(node_name, edge)
+        
+        return self.__edges[node_name].multiplicity
     
-    def degree(self):
+    def degree(self, to_add=None):
         """
         Returns the current degree of the node.
         
         :rtype long:
         """
+        if to_add:
+            self.__degree += to_add
         return self.__degree
     
     def infect(self, propagation_function=None):
@@ -206,7 +206,7 @@ class Node(object):
         if probability_function:
             return probability_function(self, to_node)
         
-        conn = self.__connections[to_node.name()]
+        conn = self.__edges[to_node.name()]
         multiplicity = conn.multiplicity
         degree = self.degree()
         if degree == 0:

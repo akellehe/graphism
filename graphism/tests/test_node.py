@@ -1,6 +1,7 @@
 import unittest
 import random 
 import time
+import weakref
 
 from graphism.tests import TestApi
 
@@ -55,7 +56,7 @@ class NodeTest(TestApi):
             
         assert len(target.connections().keys()) == 5
         assert target.degree() == 5
-        
+        """
         for n in to_clean:
             to_clean.remove(n)
             del n
@@ -65,6 +66,28 @@ class NodeTest(TestApi):
         
         assert len(target.connections().keys()) == 2
         assert target.degree() == 2
+        """
+    
+    def test_weakref_cleanup(self):
+        class A:
+            pass
+        
+        a = A()
+        refs = []
+        def cleanup(wr):
+            refs.remove(wr)
+        
+        refs.append(weakref.ref(a, cleanup))
+        refs.append(weakref.ref(a, cleanup))
+        refs.append(weakref.ref(a, cleanup))
+
+        for ref in refs:
+            assert ref() is a        
+        
+        del a
+        
+        assert len(refs) == 0
+        
 
 if __name__ == '__main__':
     unittest.main()
