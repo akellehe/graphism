@@ -148,8 +148,8 @@ class NodeTest(TestApi):
         parent = Node()
         child = Node()
         
-        parent.add_child(child) == 1L
-        child.add_parent(parent) == 2L
+        assert parent.add_child(child) == 1L
+        assert child.add_parent(parent) == 2L
         
         assert parent.degree() == 2L
         assert child.degree() == 2L
