@@ -24,6 +24,17 @@ class Edge(object):
         self.__origin_name = origin().name()
         self.__dest_name = dest().name()
         
+        def origin_cleanup(wr):
+            self.origin().remove_child_ref(wr) 
+            self.origin().remove_all_edges_by_name(self.__dest_name)
+        
+        def dest_cleanup(wr):
+            self.dest().remove_parent_ref(wr)
+            self.dest().remove_all_edges_by_name(self.__origin_name)
+            
+        dest().parents().add(weakref.ref(origin(), dest_cleanup))
+        origin().children().add(weakref.ref(dest(), origin_cleanup))
+        
         origin().add_edge(dest().name(), self)
         dest().add_edge(origin().name(), self)
 
@@ -96,6 +107,12 @@ class Node(object):
         """
         self.__children.remove(wr)
 
+    def parents(self):
+        return self.__parents
+    
+    def children(self):
+        return self.__children
+
     def add_parent(self, parent_node):
         """
         Adds a parent node to the set of parents. If the node already exists the 
@@ -103,14 +120,7 @@ class Node(object):
         
         :rtype long: The multiplicity of the edge to parent_node.
         """
-        node_name = parent_node.name()
-        weakself = weakref.ref(self)
-        def cleanup(wr):
-            weakself().remove_parent_ref(wr) 
-            weakself().remove_all_edges_by_name(node_name)
-            
-        self.__parents.add(weakref.ref(parent_node, cleanup))
-        
+        node_name = parent_node.name()       
         edge = Edge(origin=weakref.ref(parent_node), 
                     dest=weakref.ref(self))
                     
@@ -123,13 +133,6 @@ class Node(object):
         
         """
         node_name = child_node.name()
-        weakself = weakref.ref(self)
-        def cleanup(wr):
-            weakself().remove_child_ref(wr) 
-            weakself().remove_all_edges_by_name(node_name)
-            
-        self.__children.add(weakref.ref(child_node, cleanup))
-        
         edge = Edge(origin=weakref.ref(self),
                     dest=weakref.ref(child_node))
 
