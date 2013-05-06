@@ -1,3 +1,4 @@
 .pydevproject
 .project
 *.pyc
+graphism.egg-info

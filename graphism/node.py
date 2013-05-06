@@ -12,14 +12,15 @@ class Edge(object):
     multiplicity = None
     type = None
     
-    def __init__(self, origin=None, multiplicity=1L, type=None, dest=None):
+    def __init__(self, origin=None, multiplicity=1L, type_=None, dest=None, weight_=1.0):
         assert isinstance(origin, weakref.ref)
         assert isinstance(dest, weakref.ref)
         
         self.origin = origin                   
         self.dest = dest
         self.multiplicity = multiplicity
-        self.type = type
+        self.type_ = type_
+        self.weight_ = weight_
         
         self.__origin_name = origin().name()
         self.__dest_name = dest().name()
@@ -49,9 +50,10 @@ class Node(object):
     __children = None
     __edges = None
     __propagation_function = None
+    __directed = None
+
     
-    
-    def __init__(self, parents=None, children=None, name=None, directed=False):
+    def __init__(self, parents=None, children=None, name=None, directed=False, transmission_probability=None):
         """
         Instantiates a node in a graph. 
         
@@ -61,6 +63,8 @@ class Node(object):
         self.__parents = set([])
         self.__children = set([])
         self.__edges = {}
+        self.__directed = directed
+        self.__transmission_probability = transmission_probability
         
         if parents:
             for p in parents:
@@ -113,7 +117,7 @@ class Node(object):
     def children(self):
         return self.__children
 
-    def add_parent(self, parent_node):
+    def add_parent(self, parent_node, type_=None, weight_=1.0):
         """
         Adds a parent node to the set of parents. If the node already exists the 
         multiplicity of the node is increased.
@@ -122,11 +126,13 @@ class Node(object):
         """
         node_name = parent_node.name()       
         edge = Edge(origin=weakref.ref(parent_node), 
-                    dest=weakref.ref(self))
+                    dest=weakref.ref(self),
+                    type_=type_,
+                    weight_=weight_)
                     
         return self.__edges[node_name].multiplicity
     
-    def add_child(self, child_node):
+    def add_child(self, child_node, type_=None, weight_=1.0):
         """
         Adds a child node to the set of children. If the node already exists the
         multiplicity of the node is increased.
@@ -134,7 +140,9 @@ class Node(object):
         """
         node_name = child_node.name()
         edge = Edge(origin=weakref.ref(self),
-                    dest=weakref.ref(child_node))
+                    dest=weakref.ref(child_node),
+                    type_=type_,
+                    weight_=weight_)
 
         return self.__edges[node_name].multiplicity
         
@@ -179,15 +187,15 @@ class Node(object):
         :param lambda l: The function to propagate. It must take the node as the first argument
         """
         if l:
-            if self.directed:
+            if self.__directed:
                 nodes = self.__children
             else:
                 nodes = self.__parents.union(self.__children)
                 
             for n in nodes:
-                probability = self.transmission_probability(n)
+                probability = self.transmission_probability(n())
                 if random.random() < probability:
-                    n.infect(l) # It transmits!
+                    n().infect(l) # It transmits!
             
     def transmission_probability(self, to_node, probability_function=None):
         """
@@ -200,14 +208,16 @@ class Node(object):
         """
         if probability_function:
             return probability_function(self, to_node)
+        elif self.__transmission_probability:
+            return self.__transmission_probability(self, to_node)
         
-        conn = self.__edges[to_node.name()]
-        multiplicity = conn.multiplicity
+        edge = self.__edges[to_node.name()]
+        multiplicity = edge.multiplicity
         degree = self.degree()
         if degree == 0L:
-            return 0L
+            return 0.0
         else:
-            return multiplicity / degree
+            return float(multiplicity) / float(degree)
         
     def is_child_of(self, node):
         """

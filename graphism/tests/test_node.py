@@ -168,6 +168,61 @@ class NodeTest(TestApi):
         
         assert child.degree() == 0L, "Child degree is: %s" % child.degree()
         
+    def test_transmission_probability(self):
+        parent = Node()
+        child = Node()
+        child2 = Node()
+        child3 = Node()
+        
+        parent.add_child(child)
+        child.add_parent(parent)
+        
+        assert child.is_child_of(parent)
+        assert parent.is_parent_of(child)
+        
+        assert child.transmission_probability(parent) == 1.0
+        assert parent.transmission_probability(child) == 1.0
+        
+        parent.add_child(child2)
+        parent.add_child(child3)
+        
+        assert child.degree() == 2L
+        assert child2.degree() == 1L
+        assert child3.degree() == 1L
+        assert parent.degree() == 4L
+        
+        assert parent.transmission_probability(child) == 1.0/2.0, "Expected 1/2, got %s" % parent.transmission_probability(child)
+        assert parent.transmission_probability(child2) == 1.0/4.0, "Expected 1/4, got %s" % parent.transmission_probability(child2)
+        assert parent.transmission_probability(child3) == 1.0/4.0, "Expected 1/4, got %s" % parent.transmission_probability(child3)
+        
+    def test_propagate(self):
+        parent = Node()
+        child = Node()
+        
+        child.infected = False
+        
+        parent.add_child(child)
+        
+        def infection(n):
+            n.infected = True
+            
+        parent.propagate(infection)
+        
+        assert child.infected
+        
+        parent = Node()
+        children = [Node() for i in range(1000)]
+         
+        for c in children:
+            c.infected = False
+            parent.add_child(c)
+            
+        # Test that around 1 in 1000 is infected:
+        parent.propagate(infection)
+        
+        infected = float(len(filter(lambda n: n.infected, children)))
+        assert infected / 1000.0 <= 10.0 / 1000.0
+        
     
 
 if __name__ == '__main__':
