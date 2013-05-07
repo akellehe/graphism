@@ -10,9 +10,13 @@ class Edge(object):
     """
     node = None
     multiplicity = None
-    type = None
+    type_ = None
+    directed = None
+    weight_ = None
+    dest = None
+    origin = None
     
-    def __init__(self, origin=None, multiplicity=1L, type_=None, dest=None, weight_=1.0):
+    def __init__(self, origin=None, multiplicity=1L, type_=None, dest=None, weight_=1.0, directed=False):
         assert isinstance(origin, weakref.ref)
         assert isinstance(dest, weakref.ref)
         
@@ -21,6 +25,7 @@ class Edge(object):
         self.multiplicity = multiplicity
         self.type_ = type_
         self.weight_ = weight_
+        self.directed = directed
         
         self.__origin_name = origin().name()
         self.__dest_name = dest().name()
@@ -38,6 +43,7 @@ class Edge(object):
         
         origin().add_edge(dest().name(), self)
         dest().add_edge(origin().name(), self)
+
 
 class Node(object):
     """
@@ -76,7 +82,6 @@ class Node(object):
             self.__name = name
         else:
             self.__name = str(random.random()) + str(time.time())
-
     
     def name(self):
         """

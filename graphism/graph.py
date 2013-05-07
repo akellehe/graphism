@@ -33,13 +33,18 @@ class Graph(object):
                 child = edge['to_']
                 type_ = edge.get('type_', None)
                 weight_ = edge.get('weight_', 1.0)
-                
-                p = Node(name=parent, 
-                         directed=kwargs.get('directed', False), 
-                         transmission_probability=kwargs.get('tranmission_probability', None))
-                c = Node(name=child,  
-                         directed=kwargs.get('directed', False), 
-                         transmission_probability=kwargs.get('tranmission_probability', None))
+                if parent in nodes:
+                    p = nodes[parent]
+                else:
+                    p = Node(name=parent, 
+                             directed=kwargs.get('directed', False), 
+                             transmission_probability=kwargs.get('tranmission_probability', None))
+                if child in nodes:
+                    c = nodes[child]
+                else:
+                    c = Node(name=child,  
+                             directed=kwargs.get('directed', False), 
+                             transmission_probability=kwargs.get('tranmission_probability', None))
                 
                 p.add_child(c, type_=type_, weight_=weight_)
                 
@@ -49,12 +54,18 @@ class Graph(object):
             graph = args[0]
             for edge in graph:
                 parent, child = edge
-                p = Node(name=parent, 
-                         directed=kwargs.get('directed', False),
-                         transmission_probability=kwargs.get('transmission_probability', None))
-                c = Node(name=child,
-                         directed=kwargs.get('directed', False),
-                         transmission_probability=kwargs.get('transmission_probability', None))
+                if parent in nodes:
+                    p = nodes[parent]
+                else:
+                    p = Node(name=parent, 
+                             directed=kwargs.get('directed', False),
+                             transmission_probability=kwargs.get('transmission_probability', None))
+                if child in nodes:
+                    c = nodes[child]
+                else:
+                    c = Node(name=child,
+                             directed=kwargs.get('directed', False),
+                             transmission_probability=kwargs.get('transmission_probability', None))
                 p.add_child(c)
                 nodes[parent] = p
                 nodes[child] = c
@@ -76,14 +87,20 @@ class Graph(object):
         
     def add_edge(self, from_, to_):
         """
-        Adds an edge between two nodes in the graph.
+        Creates an edge between two nodes in the graph.
         
         :param graphism.node.Node from_: The node to add an edge from. (parent)
         :param graphism.node.Node to_: The terminal node. (child)
         
         :rtype tuple(graphism.node.Node, graphism.node.Edge, graphism.node.Node: A tuple of the parent node, edge, and child node.
         """
+        if from_ not in self.__nodes:
+            self.add_node(from_)
+        if to_ not in self.__nodes:
+            self.add_node(to_)
+            
         from_.add_child(to_)
+        
         return (from_, from_.edges()[to_.name()], to_)
         
         
