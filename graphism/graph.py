@@ -26,8 +26,8 @@ class Graph(object):
         
         """
         nodes = {}
-        if args or 'graph' in kwargs:
-            graph = args[0] or kwargs.get('graph', [])
+        if 'graph' in kwargs:
+            graph = kwargs['graph']
             for edge in graph:
                 parent = edge['from_']
                 child = edge['to_']
@@ -45,9 +45,26 @@ class Graph(object):
                 
                 nodes[parent] = p
                 nodes[child] = c
-            
+        elif args:
+            graph = args[0]
+            for edge in graph:
+                parent, child = edge
+                p = Node(name=parent, 
+                         directed=kwargs.get('directed', False),
+                         transmission_probability=kwargs.get('transmission_probability', None))
+                c = Node(name=child,
+                         directed=kwargs.get('directed', False),
+                         transmission_probability=kwargs.get('transmission_probability', None))
+                p.add_child(c)
+                nodes[parent] = p
+                nodes[child] = c
+                
         self.__infected = set([])    
         self.__nodes = set(nodes.items())
+        self.__nodes_by_name = nodes
+    
+    def get_node_by_name(self, name):
+        return self.__nodes_by_name.get(name, None)
     
     def add_node(self, node):
         """
