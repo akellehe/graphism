@@ -5,6 +5,63 @@ class Graph(object):
     __nodes = None
     __infected = None
     
+    def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0):
+        """
+        Creates nodes and an edge between two nodes for a given name.
+        
+        :param str parent: The name for the parent node
+        :param str child: The name for the child node
+        :param bool directed: Whether or not the edge should be directed.
+        :param function transmission_probability: The transmission probability function associated with the edge.
+        :param str type_: The type of edge
+        :param str weight_: The weight of the edge
+        """
+        p = self.get_node_by_name(parent)
+        c = self.get_node_by_name(child)
+        if not p:
+            p = Node(name=parent,
+                     transmission_probability=transmission_probability)
+        if not c:
+            c = Node(name=child,
+                     transmission_probability=transmission_probability)
+        
+        p.add_child(c, type_=type_, weight_=weight_)
+        
+        self.add_node(p)
+        self.add_node(c)
+    
+    def __init_nodes_from_kwargs(self, kwargs):
+        """
+        Initializes internal nodes for a set of keyword arguments.
+        
+        :param dict kwargs: The keyword arguments for the __init__ method.
+        
+        """
+        graph = kwargs['graph']
+        directed = kwargs.get('directed', False)
+        transmission_probability=kwargs.get('transmission_probability', None)
+        
+        for edge in graph:
+            parent = edge['from_']
+            child = edge['to_']
+            type_ = edge.get('type_', None)
+            weight_ = edge.get('weight_', 1.0)
+            
+            self.add_edge_by_node_sequence(parent, child, directed, transmission_probability, type_, weight_)
+        
+    def __init_nodes_from_args(self, args, kwargs):
+        """
+        Initializes internal nodes for a set of positional and keyword arguments.
+        
+        :param tuple args: The positional arguments for the __init__ method.
+        :param dict kwargs: The keyword arguments for the __init__ method.
+        
+        """
+        graph = args[0]
+        for edge in graph:
+            parent, child = edge
+            self.add_edge_by_node_sequence(parent, child)
+                
     def __init__(self, *args, **kwargs):
         """
         Takes an edge list of the form:
@@ -25,65 +82,36 @@ class Graph(object):
         :param list(dict) graph: You can optionally pass the graph as a keyword argument instead of the first positional argument.
         
         """
-        nodes = {}
+        self.__nodes = {}
+        self.__infected = {}
+        
         if 'graph' in kwargs:
-            graph = kwargs['graph']
-            for edge in graph:
-                parent = edge['from_']
-                child = edge['to_']
-                type_ = edge.get('type_', None)
-                weight_ = edge.get('weight_', 1.0)
-                if parent in nodes:
-                    p = nodes[parent]
-                else:
-                    p = Node(name=parent, 
-                             directed=kwargs.get('directed', False), 
-                             transmission_probability=kwargs.get('tranmission_probability', None))
-                if child in nodes:
-                    c = nodes[child]
-                else:
-                    c = Node(name=child,  
-                             directed=kwargs.get('directed', False), 
-                             transmission_probability=kwargs.get('tranmission_probability', None))
-                
-                p.add_child(c, type_=type_, weight_=weight_)
-                
-                nodes[parent] = p
-                nodes[child] = c
+            self.__init_nodes_from_kwargs(kwargs)
         elif args:
-            graph = args[0]
-            for edge in graph:
-                parent, child = edge
-                if parent in nodes:
-                    p = nodes[parent]
-                else:
-                    p = Node(name=parent, 
-                             directed=kwargs.get('directed', False),
-                             transmission_probability=kwargs.get('transmission_probability', None))
-                if child in nodes:
-                    c = nodes[child]
-                else:
-                    c = Node(name=child,
-                             directed=kwargs.get('directed', False),
-                             transmission_probability=kwargs.get('transmission_probability', None))
-                p.add_child(c)
-                nodes[parent] = p
-                nodes[child] = c
-                
-        self.__infected = set([])    
-        self.__nodes = set(nodes.items())
-        self.__nodes_by_name = nodes
+            self.__init_nodes_from_args(args, kwargs)
+
     
     def get_node_by_name(self, name):
-        return self.__nodes_by_name.get(name, None)
+        """
+        Searches the internal dict maintaining the ONLY strong reference to internal nodes by name. Returns the node with that name.
+        
+        :param str name: The name of the node to return.
+        
+        :rtype graphism.node.Node:
+        """
+        return self.__nodes.get(name, None)
     
     def add_node(self, node):
         """
         Adds a node to the graph.
         
         :param graphism.node.Node node: The node to add.
+        
+        :rtype graphism.node.Node: 
         """
-        self.__nodes.add(node)
+        if node.name() not in self.__nodes:
+            self.__nodes[node.name()] = node
+        return node
         
     def add_edge(self, from_, to_):
         """
@@ -109,19 +137,20 @@ class Graph(object):
         Sets the infection function to func. Defines a wrapper to add the 
         to self.__infected before executing the defined callback
 
-        :param function func: The function to infect with.
+        :param function callback: The function to execute on a node being infected. The only argument should be the node itself.
         
         :rtype None:
         """
-        def i(node):
-            self.__infected.add(node)
-            callback(node)
+        def i(n):
+            if n.name() not in self.__infected:
+                self.__infected[n.name()] = n
+            callback(n)
 
         self.__infection = i
         
     def infect_seeds(self, seed_nodes):
         """
-        Infects the seed_nodes.
+        Infects the seed_nodes by executing the infect method for those nodes.
         
         :param set(graphism.node.Node) seed_nodes: The nodes to start the infection with.
         """
@@ -134,7 +163,15 @@ class Graph(object):
         
         :rtype set(graphism.node.Node):
         """
-        return self.__infected
+        return set(self.__infected.values())
+    
+    def nodes(self):
+        """
+        Returns the internal nodes as a set.
+        
+        :rtype set(graphism.node.Node):
+        """
+        return set(self.__nodes.values())
     
     def susceptible(self):
         """
@@ -142,14 +179,13 @@ class Graph(object):
         
         :rtype set(graphism.node.Node):
         """
-        return self.__nodes.difference(self.__infected)
+        return self.nodes().difference(self.infected())
     
     def propagate(self):
         """
-        Executes the propagate (and recovery) function for each infected node 
-        once.
+        Executes the propagate function for each infected node once.
         
         """
-        for n in self.__infected:
+        for n in self.infected():
             n.propagate()
     

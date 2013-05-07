@@ -66,6 +66,72 @@ class GraphTest(TestApi):
         assert one.edges()[4].weight_ == 3.0
         assert one.edges()[5].weight_ == 4.0
         
+    def test_get_node_by_name(self):
+        g = Graph([(1,2),(1,3),(1,4),(1,5)])
+
+        one = g.get_node_by_name(1)
+        two = g.get_node_by_name(2)
+        three = g.get_node_by_name(3)
+        four = g.get_node_by_name(4)
+        five = g.get_node_by_name(5)
+
+        assert one.name() == 1
+        assert two.name() == 2
+        assert three.name() == 3
+        assert four.name() == 4
+        assert five.name() == 5
+
+    def test_add_edge(self):
+        g = Graph([(1,2),(1,3),(1,4),(1,5)])
+        
+        one = g.get_node_by_name(1)
+        two = g.get_node_by_name(2)
+        three = g.get_node_by_name(3)
+        
+        assert one.degree() == 4
+        assert two.degree() == 1
+        assert three.degree() == 1
+        
+        g.add_edge(one, two)
+        
+        assert one.degree() == 5
+        assert two.degree() == 2
+        assert three.degree() == 1
+        
+        g.add_edge(two, one)
+        
+        assert one.degree() == 6
+        assert two.degree() == 3
+        assert three.degree() == 1
+        
+        g.add_edge(two, three)
+        
+        assert one.degree() == 6
+        assert two.degree() == 4
+        assert three.degree() == 2
+        
+    def test_set_infection(self):
+        g = Graph([(1,2),(1,3),(1,4),(1,5)])
+        infected = []
+        
+        def callback(n):
+            infected.append(n)
+            
+        g.set_infection(callback)
+        
+        one = g.get_node_by_name(1)
+        two = g.get_node_by_name(2)
+        three = g.get_node_by_name(3)
+        
+        g.infect_seeds([one, two, three])
+        
+        assert one in infected
+        assert two in infected
+        assert three in infected
+        
+        assert one in g.infected()
+        assert two in g.infected()
+        assert three in g.infected()
         
 
-        
+

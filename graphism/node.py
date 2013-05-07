@@ -13,36 +13,46 @@ class Edge(object):
     type_ = None
     directed = None
     weight_ = None
-    dest = None
-    origin = None
+    child = None
+    parent = None
     
-    def __init__(self, origin=None, multiplicity=1L, type_=None, dest=None, weight_=1.0, directed=False):
-        assert isinstance(origin, weakref.ref)
-        assert isinstance(dest, weakref.ref)
+    def __init__(self, parent, child, multiplicity=1L, type_=None, weight_=1.0, directed=False):
+        """
+        Initializer for the Edge. 
         
-        self.origin = origin                   
-        self.dest = dest
+        :param weakref(graphism.node.Node) parent: A weak reference to the parent node. 
+        :param weakref(graphism.node.Node) child: A weak reference to the child node.
+        :param long multiplicity: The multiplicity of the edge.
+        :param str type_: The type of edge
+        :param float weight_: The weight of the edge.
+        :param bool directed: Whether or not the edge is directed.
+        """    
+        assert isinstance(parent, weakref.ref)
+        assert isinstance(child, weakref.ref)
+        
+        self.parent = parent                   
+        self.child = child
         self.multiplicity = multiplicity
         self.type_ = type_
         self.weight_ = weight_
         self.directed = directed
         
-        self.__origin_name = origin().name()
-        self.__dest_name = dest().name()
+        self.__parent_name = parent().name()
+        self.__child_name = child().name()
         
-        def origin_cleanup(wr):
-            self.origin().remove_child_ref(wr) 
-            self.origin().remove_all_edges_by_name(self.__dest_name)
+        def parent_cleanup(wr):
+            self.parent().remove_child_ref(wr) 
+            self.parent().remove_all_edges_by_name(self.__child_name)
         
-        def dest_cleanup(wr):
-            self.dest().remove_parent_ref(wr)
-            self.dest().remove_all_edges_by_name(self.__origin_name)
+        def child_cleanup(wr):
+            self.child().remove_parent_ref(wr)
+            self.child().remove_all_edges_by_name(self.__parent_name)
             
-        dest().parents().add(weakref.ref(origin(), dest_cleanup))
-        origin().children().add(weakref.ref(dest(), origin_cleanup))
+        child().parents().add(weakref.ref(parent(), child_cleanup))
+        parent().children().add(weakref.ref(child(), parent_cleanup))
         
-        origin().add_edge(dest().name(), self)
-        dest().add_edge(origin().name(), self)
+        parent().add_edge(child().name(), self)
+        child().add_edge(parent().name(), self)
 
 
 class Node(object):
@@ -56,20 +66,19 @@ class Node(object):
     __children = None
     __edges = None
     __propagation_function = None
-    __directed = None
-
     
-    def __init__(self, parents=None, children=None, name=None, directed=False, transmission_probability=None):
+    def __init__(self, parents=None, children=None, name=None, transmission_probability=None):
         """
         Instantiates a node in a graph. 
         
         :param list(graphism.node.Node) parents: A list of parent nodes. They are added as parents to this node.
         :param list(graphism.node.Node) children: A list of child nodes. They are added as children to this node.
+        :param str name: The name of the node. Must be unique for each node in the graph.
+        :param function transmission_probability: Takes two arguments of type graphism.node.Node. The first positional argument is the parent node, the second is the child. The output should be the probability of an infection transmitting from the parent to the child over one exposure. The output should be a float in [0,1].
         """
         self.__parents = set([])
         self.__children = set([])
         self.__edges = {}
-        self.__directed = directed
         self.__transmission_probability = transmission_probability
         
         if parents:
@@ -91,6 +100,12 @@ class Node(object):
         return self.__name
 
     def add_edge(self, name, edge):
+        """
+        Add an edge to the node. If the edge already exists the multiplicity is increased (by 0.5).
+
+        :param str name: The name of the other node in the edge.
+        :param graphism.node.Edge edge: The edge object.
+        """
         if name in self.__edges:
             self.__edges[name].multiplicity += 0.5
         else:
@@ -98,6 +113,11 @@ class Node(object):
         self.degree(1L)
 
     def remove_all_edges_by_name(self, name):
+        """
+        Removes all edges in the graph associated with the node named name.
+        
+        :param str name: The name of the node to remove all edges from.
+        """
         if name in self.__edges:
             edge = self.__edges.pop(name)
             self.degree(-1L*edge.multiplicity)
@@ -106,6 +126,7 @@ class Node(object):
         """
         Removes a weakref from the parent list.
         
+        :param weakref.ref wr: The weakref to remove.
         """
         self.__parents.remove(wr)
         
@@ -113,25 +134,40 @@ class Node(object):
         """
         Removes a weakref from the child list.
         
+        :param weakref.ref wr: The weakref to remove.
         """
         self.__children.remove(wr)
 
     def parents(self):
+        """
+        Getter for the list of parent nodes.
+        
+        :rtype set(weakref.ref(graphism.node.Node)):
+        """
         return self.__parents
     
     def children(self):
+        """
+        Getter for the list of child nodes.
+        
+        :rtype set(weakref.ref(graphism.node.Node)):
+        """
         return self.__children
 
     def add_parent(self, parent_node, type_=None, weight_=1.0):
         """
         Adds a parent node to the set of parents. If the node already exists the 
-        multiplicity of the node is increased.
+        multiplicity of the node is increased. Also creates an edge from the parent to self.
+        
+        :param graphism.node.Node parent_node: The parent node to add.
+        :param str type_: The type of edge to add.
+        :param float weight_: The weight of the edge
         
         :rtype long: The multiplicity of the edge to parent_node.
         """
         node_name = parent_node.name()       
-        edge = Edge(origin=weakref.ref(parent_node), 
-                    dest=weakref.ref(self),
+        edge = Edge(parent=weakref.ref(parent_node), 
+                    child=weakref.ref(self),
                     type_=type_,
                     weight_=weight_)
                     
@@ -142,10 +178,15 @@ class Node(object):
         Adds a child node to the set of children. If the node already exists the
         multiplicity of the node is increased.
         
+        :param graphism.node.Node child_node: The child node to add.
+        :param str type_: The type of edge to add.
+        :param float weight_: The weight of the edge
+        
+        :rtype long: The multiplicity of the edge to child_node.
         """
         node_name = child_node.name()
-        edge = Edge(origin=weakref.ref(self),
-                    dest=weakref.ref(child_node),
+        edge = Edge(parent=weakref.ref(self),
+                    child=weakref.ref(child_node),
                     type_=type_,
                     weight_=weight_)
 
@@ -192,10 +233,12 @@ class Node(object):
         :param lambda l: The function to propagate. It must take the node as the first argument
         """
         if l:
-            if self.__directed:
-                nodes = self.__children
-            else:
-                nodes = self.__parents.union(self.__children)
+            nodes = set([])
+            for edge in self.edges().values():
+                if edge.directed and self is edge.parent():
+                    nodes.add(edge.child)
+                else:
+                    nodes.add(edge.child)
                 
             for n in nodes:
                 probability = self.transmission_probability(n())
