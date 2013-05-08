@@ -20,4 +20,13 @@ Unit tests run under distutils.
 `python setup.py test`
 
 
+Compiling Documentation
+=======================
 
+From the root of the package go to the directory docs/ and run 
+
+`make html`
+
+You'll find the index.html file at docs/build/index.html
+
+Open it up and browse the documentation in your browser.
