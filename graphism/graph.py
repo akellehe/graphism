@@ -25,6 +25,29 @@ class Graph(object):
     
     __nodes = None
     __infected = None
+    __transmission_probability = None
+    
+    def __init__(self, *args, **kwargs):
+        self.__nodes = {}
+        self.__infected = {}
+        
+        def tp(from_node, to_node):
+            print "Edges: %s" % from_node.edges()
+            print "parent: %s, child: %s" % (from_node.name(), to_node.name())
+            edge = from_node.edges()[to_node.name()]
+            multiplicity = edge.multiplicity
+            degree = from_node.degree()
+            if degree == 0L:
+                return 0.0
+            else:
+                return float(multiplicity) / float(degree)
+        
+        self.__transmission_probability = tp
+        
+        if 'graph' in kwargs:
+            self.__init_nodes_from_kwargs(kwargs)
+        elif args:
+            self.__init_nodes_from_args(args, kwargs)
     
     def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0):
         """
@@ -37,11 +60,14 @@ class Graph(object):
         :param str type_: The type of edge
         :param str weight_: The weight of the edge
         """
+        if parent == child:
+            print "Parent and child are equal: %s" % parent
         p = self.get_node_by_name(parent)
-        c = self.get_node_by_name(child)
         if not p:
             p = Node(name=parent,
                      transmission_probability=transmission_probability or self.__transmission_probability)
+
+        c = self.get_node_by_name(child)
         if not c:
             c = Node(name=child,
                      transmission_probability=transmission_probability or self.__transmission_probability)
@@ -82,16 +108,6 @@ class Graph(object):
         for edge in graph:
             parent, child = edge
             self.add_edge_by_node_sequence(parent, child)
-                
-    def __init__(self, *args, **kwargs):
-        self.__nodes = {}
-        self.__infected = {}
-        
-        if 'graph' in kwargs:
-            self.__init_nodes_from_kwargs(kwargs)
-        elif args:
-            self.__init_nodes_from_args(args, kwargs)
-
     
     def get_node_by_name(self, name):
         """
@@ -189,5 +205,5 @@ class Graph(object):
         
         """
         for n in self.infected():
-            n.propagate()
+            n.propagate(self.__infection)
     

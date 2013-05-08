@@ -115,6 +115,8 @@ class Node(object):
         :rtype long: The multiplicity of the edge to parent_node.
         """
         node_name = parent_node.name()       
+        if self.name() == parent_node.name():
+            raise Exception("Adding parent to self!")
         edge = Edge(parent=weakref.ref(parent_node), 
                     child=weakref.ref(self),
                     type_=type_,
@@ -134,6 +136,8 @@ class Node(object):
         :rtype long: The multiplicity of the edge to child_node.
         """
         node_name = child_node.name()
+        if self.name() == child_node.name():
+            raise Exception("Adding child to self!")
         edge = Edge(parent=weakref.ref(self),
                     child=weakref.ref(child_node),
                     type_=type_,
@@ -187,7 +191,10 @@ class Node(object):
                 if edge.directed and self is edge.parent():
                     nodes.add(edge.child)
                 else:
-                    nodes.add(edge.child)
+                    if self is not edge.child():
+                        nodes.add(edge.child)
+                    elif self is not edge.parent():
+                        nodes.add(edge.parent)
                 
             for n in nodes:
                 probability = self.transmission_probability(n())
@@ -207,14 +214,6 @@ class Node(object):
             return probability_function(self, to_node)
         elif self.__transmission_probability:
             return self.__transmission_probability(self, to_node)
-        
-        edge = self.__edges[to_node.name()]
-        multiplicity = edge.multiplicity
-        degree = self.degree()
-        if degree == 0L:
-            return 0.0
-        else:
-            return float(multiplicity) / float(degree)
         
     def is_child_of(self, node):
         """
