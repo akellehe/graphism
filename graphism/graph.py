@@ -32,8 +32,6 @@ class Graph(object):
         self.__infected = {}
         
         def tp(from_node, to_node):
-            print "Edges: %s" % from_node.edges()
-            print "parent: %s, child: %s" % (from_node.name(), to_node.name())
             edge = from_node.edges()[to_node.name()]
             multiplicity = edge.multiplicity
             degree = from_node.degree()
@@ -60,8 +58,6 @@ class Graph(object):
         :param str type_: The type of edge
         :param str weight_: The weight of the edge
         """
-        if parent == child:
-            print "Parent and child are equal: %s" % parent
         p = self.get_node_by_name(parent)
         if not p:
             p = Node(name=parent,

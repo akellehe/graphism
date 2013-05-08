@@ -115,8 +115,6 @@ class Node(object):
         :rtype long: The multiplicity of the edge to parent_node.
         """
         node_name = parent_node.name()       
-        if self.name() == parent_node.name():
-            raise Exception("Adding parent to self!")
         edge = Edge(parent=weakref.ref(parent_node), 
                     child=weakref.ref(self),
                     type_=type_,
@@ -136,8 +134,6 @@ class Node(object):
         :rtype long: The multiplicity of the edge to child_node.
         """
         node_name = child_node.name()
-        if self.name() == child_node.name():
-            raise Exception("Adding child to self!")
         edge = Edge(parent=weakref.ref(self),
                     child=weakref.ref(child_node),
                     type_=type_,
