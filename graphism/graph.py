@@ -1,4 +1,5 @@
-from graphism.node import Edge, Node
+from graphism.node import Node
+from graphism.edge import Edge
 
 class Graph(object):
     
