@@ -2,6 +2,26 @@ from graphism.node import Node
 from graphism.edge import Edge
 
 class Graph(object):
+    """
+    Takes an edge list of the form:
+
+    .. code-block:: python
+    
+        [(1,2),(2,3),...(1,4)]
+
+
+    as the first positional argument where valid keys are from_, to_, type_,
+    and weight_. Type and weight are optional.
+    
+    __init__ creates a node for each unique integer and adds the node to the graph.
+    
+    Possible keyword arguments are:
+    
+    :param bool directed: If set to False the graph will be undirected and transmissions can occur from child-to-parent as well as parent-to-child
+    :param function transmission_probability: The transmission probability function. Should take two arguments of type graphism.node.Node. The first positional argument is the parent (infection host), the second is the child. 
+    :param list(dict) graph: You can optionally pass the graph as a keyword argument instead of the first positional argument.
+    
+    """
     
     __nodes = None
     __infected = None
@@ -64,25 +84,6 @@ class Graph(object):
             self.add_edge_by_node_sequence(parent, child)
                 
     def __init__(self, *args, **kwargs):
-        """
-        Takes an edge list of the form:
-        
-        ..code-block::
-        
-             [dict, dict, dict...dict] 
-        
-        as the first positional argument where valid keys are from_, to_, type_,
-        and weight_. Type and weight are optional.
-        
-        __init__ creates a node for each unique integer and adds the node to the graph.
-        
-        Possible keyword arguments are:
-        
-        :param bool directed: If set to False the graph will be undirected and transmissions can occur from child->parent as well as parent->child
-        :param function transmission_probability: The transmission probability function. Should take two arguments of type graphism.node.Node. The first positional argument is the parent (infection host), the second is the child. 
-        :param list(dict) graph: You can optionally pass the graph as a keyword argument instead of the first positional argument.
-        
-        """
         self.__nodes = {}
         self.__infected = {}
         

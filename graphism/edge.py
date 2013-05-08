@@ -4,7 +4,13 @@ class Edge(object):
     """
     Represents a Edge between the node containing the Edge and a parent or child node.
     
-    """
+    :param weakref(graphism.node.Node) parent: A weak reference to the parent node. 
+    :param weakref(graphism.node.Node) child: A weak reference to the child node.
+    :param long multiplicity: The multiplicity of the edge.
+    :param str type_: The type of edge
+    :param float weight_: The weight of the edge.
+    :param bool directed: Whether or not the edge is directed.
+    """    
     node = None
     multiplicity = None
     type_ = None
@@ -14,16 +20,6 @@ class Edge(object):
     parent = None
     
     def __init__(self, parent, child, multiplicity=1L, type_=None, weight_=1.0, directed=False):
-        """
-        Initializer for the Edge. 
-        
-        :param weakref(graphism.node.Node) parent: A weak reference to the parent node. 
-        :param weakref(graphism.node.Node) child: A weak reference to the child node.
-        :param long multiplicity: The multiplicity of the edge.
-        :param str type_: The type of edge
-        :param float weight_: The weight of the edge.
-        :param bool directed: Whether or not the edge is directed.
-        """    
         assert isinstance(parent, weakref.ref)
         assert isinstance(child, weakref.ref)
         
