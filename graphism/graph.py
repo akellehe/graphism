@@ -41,10 +41,10 @@ class Graph(object):
         c = self.get_node_by_name(child)
         if not p:
             p = Node(name=parent,
-                     transmission_probability=transmission_probability)
+                     transmission_probability=transmission_probability or self.__transmission_probability)
         if not c:
             c = Node(name=child,
-                     transmission_probability=transmission_probability)
+                     transmission_probability=transmission_probability or self.__transmission_probability)
         
         p.add_child(c, type_=type_, weight_=weight_)
         
