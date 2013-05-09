@@ -26,6 +26,8 @@ class Graph(object):
     __nodes = None
     __infected = None
     __transmission_probability = None
+    __infection = None
+    __recovery = None
     
     def __init__(self, *args, **kwargs):
         self.__nodes = {}
@@ -46,6 +48,9 @@ class Graph(object):
             self.__init_nodes_from_kwargs(kwargs)
         elif args:
             self.__init_nodes_from_args(args, kwargs)
+            
+        self.set_infection(lambda n: None)
+        self.set_recovery(lambda n: None)
     
     def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0):
         """
@@ -148,7 +153,7 @@ class Graph(object):
         
     def set_infection(self, callback):
         """
-        Sets the infection function to func. Defines a wrapper to add the 
+        Sets the infection function to callback. Defines a wrapper to add the node
         to self.__infected before executing the defined callback
 
         :param function callback: The function to execute on a node being infected. The only argument should be the node itself.
@@ -161,6 +166,21 @@ class Graph(object):
             callback(n)
 
         self.__infection = i
+        
+    def set_recovery(self, callback):
+        """
+        Sets the recovery function to callback. Defines a wrapper to remove the 
+        node from self.__infected before executing the defined callback
+
+        :param function callback: The function to execute on a node being infected. The only argument should be the node itself.
+        
+        :rtype None:
+        """
+        def r(n):
+            if n.name() in self.__infected:
+                self.__infected.pop(n.name())
+        
+        self.__recovery = r
         
     def infect_seeds(self, seed_nodes):
         """
@@ -202,4 +222,12 @@ class Graph(object):
         """
         for n in self.infected():
             n.propagate(self.__infection)
+            
+    def recover(self):
+        """
+        Executes the recovery function for each infected node once.
+        
+        """
+        for n in self.infected():
+            n.recover(self.__recovery)
     

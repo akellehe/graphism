@@ -14,7 +14,7 @@ class Node(object):
     __parents = None
     __children = None
     __edges = None
-    __propagation_function = None
+    __infection_function = None
     
     def __init__(self, parents=None, children=None, name=None, transmission_probability=None):
         """
@@ -159,17 +159,28 @@ class Node(object):
             self.__degree += to_add
         return self.__degree
     
-    def infect(self, propagation_function=None):
+    def infect(self, infection_function=None):
         """
         Gets or sets the propagation function on the node. This is analogous to infecting the node. 
         
-        :param function propagation_function: When passed it sets the function to infect other nodes.
+        :param function infection_function: When passed it sets the function to infect other nodes.
         
         """
-        if propagation_function:
-            self.__propagation_function = propagation_function
-            propagation_function(self)
-        return self.__propagation_function
+        if infection_function:
+            self.__infection_function = infection_function
+            infection_function(self)
+        return self.__infection_function
+        
+    def recover(self, recovery_function=None):
+        """
+        Recover from infection.
+        
+        :param function recovery_function: The callback to execute during recovery
+        """
+        if recovery_function:
+            self.__recovery_function = recovery_function
+            recovery_function(self)
+        return self.__recovery_function
         
     def propagate(self, l=None):
         """
