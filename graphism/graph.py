@@ -26,6 +26,7 @@ class Graph(object):
     __nodes = None
     __infected = None
     __transmission_probability = None
+    __recovery_probability = None
     __infection = None
     __recovery = None
     
@@ -42,7 +43,11 @@ class Graph(object):
             else:
                 return float(multiplicity) / float(degree)
         
+        def rp(n):
+            return 0.5
+        
         self.__transmission_probability = tp
+        self.__recovery_probability = rp
         
         if 'graph' in kwargs:
             self.__init_nodes_from_kwargs(kwargs)
@@ -52,7 +57,7 @@ class Graph(object):
         self.set_infection(lambda n: None)
         self.set_recovery(lambda n: None)
     
-    def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0):
+    def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0, recovery_probability=None):
         """
         Creates nodes and an edge between two nodes for a given name.
         
@@ -66,12 +71,14 @@ class Graph(object):
         p = self.get_node_by_name(parent)
         if not p:
             p = Node(name=parent,
-                     transmission_probability=transmission_probability or self.__transmission_probability)
+                     transmission_probability=transmission_probability or self.__transmission_probability,
+                     recovery_probability=recovery_probability or self.__recovery_probability)
 
         c = self.get_node_by_name(child)
         if not c:
             c = Node(name=child,
-                     transmission_probability=transmission_probability or self.__transmission_probability)
+                     transmission_probability=transmission_probability or self.__transmission_probability,
+                     recovery_probability=recovery_probability or self.__recovery_probability)
         
         p.add_child(c, type_=type_, weight_=weight_)
         
@@ -217,11 +224,14 @@ class Graph(object):
     
     def propagate(self):
         """
-        Executes the propagate function for each infected node once.
+        First recovers infected nodes according to the probability of recovery. Second, propagates infections from infected nodes according to the probability of transmission. 
         
         """
         for n in self.infected():
-            n.propagate(self.__infection)
+            n.recover(self.__recovery)
+            
+        for n in self.infected():
+            n.propagate_infection(self.__infection)
             
     def recover(self):
         """
