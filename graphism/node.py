@@ -14,9 +14,11 @@ class Node(object):
     __parents = None
     __children = None
     __edges = None
-    __propagation_function = None
+    __infection_function = None
+    __transmission_probability = None
+    __recovery_probability = None
     
-    def __init__(self, parents=None, children=None, name=None, transmission_probability=None):
+    def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None):
         """
         Instantiates a node in a graph. 
         
@@ -28,7 +30,21 @@ class Node(object):
         self.__parents = set([])
         self.__children = set([])
         self.__edges = {}
-        self.__transmission_probability = transmission_probability
+        
+        def tp(from_node, to_node):
+            edge = from_node.edges()[to_node.name()]
+            multiplicity = edge.multiplicity
+            degree = from_node.degree()
+            if degree == 0L:
+                return 0.0
+            else:
+                return float(multiplicity) / float(degree)
+            
+        def r(n):
+            return 0.5
+        
+        self.__transmission_probability = transmission_probability or tp
+        self.__recovery_probability = recovery_probability or r
         
         if parents:
             for p in parents:
@@ -159,19 +175,34 @@ class Node(object):
             self.__degree += to_add
         return self.__degree
     
-    def infect(self, propagation_function=None):
+    def infect(self, infection_function=None):
         """
         Gets or sets the propagation function on the node. This is analogous to infecting the node. 
         
-        :param function propagation_function: When passed it sets the function to infect other nodes.
+        :param function infection_function: When passed it sets the function to infect other nodes.
         
         """
-        if propagation_function:
-            self.__propagation_function = propagation_function
-            propagation_function(self)
-        return self.__propagation_function
+        if infection_function:
+            self.__infection_function = infection_function
+            infection_function(self)
+        return self.__infection_function
         
-    def propagate(self, l=None):
+    def recover(self, recovery_function=None):
+        """
+        Recover from infection.
+        
+        :param function recovery_function: The callback to execute during recovery
+        """
+        if random.random() < self.__recovery_probability(self):
+            if recovery_function:
+                self.__recovery_function = recovery_function
+                recovery_function(self)
+            else:
+                self.__recovery_function(self)
+                
+        return self.__recovery_function
+        
+    def propagate_infection(self, l=None):
         """
         Propagates the lambda function (executes the function on) nodes 
         at random in the set of parents and children weighted by the 
@@ -187,7 +218,10 @@ class Node(object):
                 if edge.directed and self is edge.parent():
                     nodes.add(edge.child)
                 else:
-                    nodes.add(edge.child)
+                    if self is not edge.child():
+                        nodes.add(edge.child)
+                    elif self is not edge.parent():
+                        nodes.add(edge.parent)
                 
             for n in nodes:
                 probability = self.transmission_probability(n())
@@ -207,14 +241,6 @@ class Node(object):
             return probability_function(self, to_node)
         elif self.__transmission_probability:
             return self.__transmission_probability(self, to_node)
-        
-        edge = self.__edges[to_node.name()]
-        multiplicity = edge.multiplicity
-        degree = self.degree()
-        if degree == 0L:
-            return 0.0
-        else:
-            return float(multiplicity) / float(degree)
         
     def is_child_of(self, node):
         """

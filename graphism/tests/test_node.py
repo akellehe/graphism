@@ -180,8 +180,8 @@ class NodeTest(TestApi):
         assert child.is_child_of(parent)
         assert parent.is_parent_of(child)
         
-        assert child.transmission_probability(parent) == 1.0
-        assert parent.transmission_probability(child) == 1.0
+        assert child.transmission_probability(parent) == 1.0, "Expected 1.0, got %s" % child.transmission_probability(parent)
+        assert parent.transmission_probability(child) == 1.0, "Expected 1.0, got %s" % parent.transmission_probability(child)
         
         parent.add_child(child2)
         parent.add_child(child3)
@@ -206,7 +206,7 @@ class NodeTest(TestApi):
         def infection(n):
             n.infected = True
             
-        parent.propagate(infection)
+        parent.propagate_infection(infection)
         
         assert child.infected
         
@@ -218,7 +218,7 @@ class NodeTest(TestApi):
             parent.add_child(c)
             
         # Test that around 1 in 1000 is infected:
-        parent.propagate(infection)
+        parent.propagate_infection(infection)
         
         infected = float(len(filter(lambda n: n.infected, children)))
         assert infected / 1000.0 <= 10.0 / 1000.0
