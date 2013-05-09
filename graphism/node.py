@@ -17,6 +17,7 @@ class Node(object):
     __infection_function = None
     __transmission_probability = None
     __recovery_probability = None
+    __recovery_function = None
     
     def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None):
         """

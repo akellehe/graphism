@@ -133,5 +133,31 @@ class GraphTest(TestApi):
         assert two in g.infected()
         assert three in g.infected()
         
+    def test_set_recovery(self):
+        edges = []
+        for i in range(1,100):
+            for j in range(1,100):
+                if i == j:
+                    continue
+                else:
+                    edges.append((i,j))
+                    
+        g = Graph(edges)        
 
+        recovered = []
+        def recovery_function(n):
+            recovered.append(n)
+        
+        g.set_recovery(recovery_function)
 
+        g.infect_seeds([g.get_node_by_name(i) for i in range(1,100)])
+
+        assert not recovered
+
+        before = g.infected()
+        g.recover()
+        after = g.infected()
+        
+        assert not not recovered
+        
+        assert after < before        
