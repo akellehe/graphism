@@ -8,8 +8,8 @@ def barabasi_albert( m, N ):
     print "graph needs more nodes"
   BA = gg.Graph([ (1,2) ])
   while len( BA.nodes() ) < N:
-    for node in BA.nodes():
-      print node.name(), node.degree()
+#    for node in BA.nodes():
+#      print node.name(), node.degree()
     new_edges_to = choose_nodes( BA, m )
     new_node = gn.Node( name=str(node_name) )
     node_name += 1
