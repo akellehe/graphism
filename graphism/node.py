@@ -53,7 +53,8 @@ class Node(object):
         if children:
             for c in children:
                 self.add_child(c)
-        if name:
+                
+        if name is not None:
             self.__name = name
         else:
             self.__name = str(random.random()) + str(time.time())
