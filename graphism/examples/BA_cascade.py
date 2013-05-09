@@ -1,5 +1,5 @@
 import graphism.graph as gg
-import uniform_graph as ug
+import graphism.graphs.uniform_graph as ug
 
 def cb_fun( node ):
   return 0
