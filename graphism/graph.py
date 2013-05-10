@@ -186,7 +186,8 @@ class Graph(object):
         def r(n):
             if n.name() in self.__infected:
                 self.__infected.pop(n.name())
-        
+            callback(r)
+            
         self.__recovery = r
         
     def infect_seeds(self, seed_nodes):

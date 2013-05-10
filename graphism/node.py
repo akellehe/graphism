@@ -17,6 +17,7 @@ class Node(object):
     __infection_function = None
     __transmission_probability = None
     __recovery_probability = None
+    __recovery_function = None
     
     def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None):
         """
@@ -52,7 +53,8 @@ class Node(object):
         if children:
             for c in children:
                 self.add_child(c)
-        if name:
+                
+        if name is not None:
             self.__name = name
         else:
             self.__name = str(random.random()) + str(time.time())

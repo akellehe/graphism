@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
   name='graphism',
-  version='1.0.3',
+  version='1.0.4',
   packages=find_packages(),
   author='Andrew Kelleher',
   author_email='akellehe@gmail.com',
