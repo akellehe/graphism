@@ -160,4 +160,6 @@ class GraphTest(TestApi):
         
         assert not not recovered
         
-        assert after < before        
+        assert len(after) < len(before)        
+        
+        
