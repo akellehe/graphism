@@ -2,11 +2,15 @@ import graphism as g
 import random as r
 import graphism.graph as gg
 import graphism.node as gn
-def barabasi_albert( m, N ):
-  node_name = 3
+def barabasi_albert( m, N, seed_graph=None ):
   if N < 2:
     print "graph needs more nodes"
-  BA = gg.Graph([ (1,2) ])
+  if seed_graph == None:
+    node_name = 3
+    BA = gg.Graph([ ('1','2') ])
+  else:
+    node_name = len( seed_graph.nodes() ) + 1
+    BA = seed_graph
   while len( BA.nodes() ) < N:
 #    for node in BA.nodes():
 #      print node.name(), node.degree()
@@ -44,4 +48,4 @@ def choose_nodes( g, m ):
           continue
   return nodelist
 
-gr = barabasi_albert( 2, 10 )
+# gr = barabasi_albert( 2, 10 )
