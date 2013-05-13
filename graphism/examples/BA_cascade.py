@@ -2,6 +2,14 @@ import graphism.graph as gg
 import graphism.graph_generators.barabasi_albert as ba
 import graphism.graph_generators.uniform_graph as ug
 
+"""
+  This is an example of how to create a BA graph, and run a cascade
+  on that graph.  Just for fun, it uses the optional seed_graph option
+  of the graphism.graph_generators.barabasi_albert module, and uses a
+  uniform graph as the seed.  You could use this to move continuously
+  away from an SIR model, toward a more clustered graph.
+"""
+
 def cb_fun( node ):
   """ 
   a very simple callback function
