@@ -1,6 +1,14 @@
 import graphism.graph as gg
 import graphism.graph_generators.uniform_graph as ug
 
+"""
+  This is an example of how to simulate an SIR model using the 
+  graph_generators.uniform_graph module along with the cascade functionality of 
+  the graphism.Graph object.  The output, to stdout, is the I curve.  The time
+  units are arbitrary, and this model is technically a discretized version of
+  the SIR model.
+"""
+
 def cb_fun( node ):
   """
   super simple callback function
