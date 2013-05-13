@@ -1,6 +1,8 @@
 from graphism.node import Node
 from graphism.edge import Edge
 
+from graphism.helpers import tp, rp, return_none_from_one
+
 class Graph(object):
     """
     Takes an edge list of the form:
@@ -32,20 +34,7 @@ class Graph(object):
     
     def __init__(self, *args, **kwargs):
         self.__nodes = {}
-        self.__infected = {}
-        
-        def tp(from_node, to_node):
-            edge = from_node.edges()[to_node.name()]
-            multiplicity = edge.multiplicity
-            degree = from_node.degree()
-            if degree == 0L:
-                return 0.0
-            else:
-                return float(multiplicity) / float(degree)
-        
-        def rp(n):
-            return 0.5
-        
+        self.__infected = {}        
         self.__transmission_probability = tp
         self.__recovery_probability = rp
         
@@ -54,8 +43,8 @@ class Graph(object):
         elif args:
             self.__init_nodes_from_args(args, kwargs)
             
-        self.set_infection(lambda n: None)
-        self.set_recovery(lambda n: None)
+        self.set_infection(return_none_from_one)
+        self.set_recovery(return_none_from_one)
     
     def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0, recovery_probability=None):
         """
@@ -72,13 +61,15 @@ class Graph(object):
         if not p:
             p = Node(name=parent,
                      transmission_probability=transmission_probability or self.__transmission_probability,
-                     recovery_probability=recovery_probability or self.__recovery_probability)
+                     recovery_probability=recovery_probability or self.__recovery_probability,
+                     graph=self)
 
         c = self.get_node_by_name(child)
         if not c:
             c = Node(name=child,
                      transmission_probability=transmission_probability or self.__transmission_probability,
-                     recovery_probability=recovery_probability or self.__recovery_probability)
+                     recovery_probability=recovery_probability or self.__recovery_probability,
+                     graph=self)
         
         p.add_child(c, type_=type_, weight_=weight_)
         
@@ -160,35 +151,23 @@ class Graph(object):
         
     def set_infection(self, callback):
         """
-        Sets the infection function to callback. Defines a wrapper to add the node
-        to self.__infected before executing the defined callback
+        Sets the infection function to callback. Should return True if the node was infected. False otherwise.
 
         :param function callback: The function to execute on a node being infected. The only argument should be the node itself.
         
         :rtype None:
         """
-        def i(n):
-            if n.name() not in self.__infected:
-                self.__infected[n.name()] = n
-            callback(n)
-
-        self.__infection = i
+        self.__infection = callback
         
     def set_recovery(self, callback):
         """
-        Sets the recovery function to callback. Defines a wrapper to remove the 
-        node from self.__infected before executing the defined callback
+        Sets the recovery function to callback. Should return True if the node recovers. False otherwise
 
         :param function callback: The function to execute on a node being infected. The only argument should be the node itself.
         
         :rtype None:
-        """
-        def r(n):
-            if n.name() in self.__infected:
-                self.__infected.pop(n.name())
-            callback(r)
-            
-        self.__recovery = r
+        """           
+        self.__recovery = callback
         
     def infect_seeds(self, seed_nodes):
         """
@@ -206,6 +185,21 @@ class Graph(object):
         :rtype set(graphism.node.Node):
         """
         return set(self.__infected.values())
+    
+    def add_infected(self, node):
+        """
+        Adds a node to the list of infected nodes
+        
+        """
+        self.__infected[node.name()] = node
+        
+    def remove_infected(self, node):
+        """
+        Removes a node form the list of infected nodes
+        
+        """
+        if node.name() in self.__infected:
+            del self.__infected[node.name()]
     
     def nodes(self):
         """
@@ -225,20 +219,22 @@ class Graph(object):
     
     def propagate(self):
         """
-        First recovers infected nodes according to the probability of recovery. Second, propagates infections from infected nodes according to the probability of transmission. 
+        First recovers infected nodes according to the probability of recovery. 
+        Second, propagates infections from infected nodes according to the probability of transmission. 
         
         """
-        for n in self.infected():
-            n.recover(self.__recovery)
+        self.recover()
             
         for n in self.infected():
             n.propagate_infection(self.__infection)
             
     def recover(self):
         """
-        Executes the recovery function for each infected node once.
+        Executes the recovery function for each infected node and subsequently 
+        removes it from the 'infected' set iff that node recovered.
         
         """
         for n in self.infected():
-            n.recover(self.__recovery)
+            n.recover(self.__recovery) # Returns true if recovered, false if not
+
     

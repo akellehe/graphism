@@ -3,6 +3,7 @@ import random
 import weakref
 
 from graphism.edge import Edge
+from graphism.helpers import return_none, tp, rp
 
 class Node(object):
     """
@@ -18,8 +19,9 @@ class Node(object):
     __transmission_probability = None
     __recovery_probability = None
     __recovery_function = None
+    __graph = None
     
-    def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None):
+    def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None, graph=None):
         """
         Instantiates a node in a graph. 
         
@@ -32,20 +34,12 @@ class Node(object):
         self.__children = set([])
         self.__edges = {}
         
-        def tp(from_node, to_node):
-            edge = from_node.edges()[to_node.name()]
-            multiplicity = edge.multiplicity
-            degree = from_node.degree()
-            if degree == 0L:
-                return 0.0
-            else:
-                return float(multiplicity) / float(degree)
-            
-        def r(n):
-            return 0.5
-        
         self.__transmission_probability = transmission_probability or tp
-        self.__recovery_probability = recovery_probability or r
+        self.__recovery_probability = recovery_probability or rp
+        
+        self.__graph = return_none
+        if graph:
+            self.__graph = weakref.ref(graph)
         
         if parents:
             for p in parents:
@@ -187,6 +181,10 @@ class Node(object):
         if infection_function:
             self.__infection_function = infection_function
             infection_function(self)
+        
+        if self.__graph():
+            self.__graph().add_infected(self)
+        
         return self.__infection_function
         
     def recover(self, recovery_function=None):
@@ -198,12 +196,14 @@ class Node(object):
         if random.random() < self.__recovery_probability(self):
             if recovery_function:
                 self.__recovery_function = recovery_function
-                recovery_function(self)
             else:
                 self.__recovery_function(self)
-                
-        return self.__recovery_function
-        
+            self.__recovery_function(self) 
+            if self.__graph():
+                self.__graph().remove_infected(self)
+            return True
+        return False
+                        
     def propagate_infection(self, l=None):
         """
         Propagates the lambda function (executes the function on) nodes 
