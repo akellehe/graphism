@@ -11,7 +11,7 @@ def cb_fun( node ):
 N = 300
 
 # build the graph
-g = ug.build_uniform_graph( N )
+g = ug.build( N )
 
 #set the callback function for the cascade
 g.set_infection( cb_fun )
