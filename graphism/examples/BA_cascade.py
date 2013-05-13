@@ -13,7 +13,7 @@ m = 2   # edges to add at each step
 N = 50  # total number of nodes
 
 # just for fun, build the BA graph from a uniform seed graph
-seed_graph = ug.build_uniform_graph( 10 )
+seed_graph = ug.build( 10 )
 g = ba.barabasi_albert( m, N, seed_graph )
 
 # set the callback functions for the cascades
