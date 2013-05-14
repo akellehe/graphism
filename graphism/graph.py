@@ -1,3 +1,5 @@
+import sys
+
 from graphism.node import Node
 from graphism.edge import Edge
 
@@ -25,16 +27,21 @@ class Graph(object):
     :param list(dict) graph: You can optionally pass the graph as a keyword argument instead of the first positional argument.
     
     """
-    __nodes = None
+    __susceptible = None
     __infected = None
+    __recovered = None
+    
     __transmission_probability = None
     __recovery_probability = None
+    
     __infection = None
     __recovery = None
     
     def __init__(self, *args, **kwargs):
-        self.__nodes = {}
-        self.__infected = {}        
+        self.__susceptible = {}
+        self.__infected = {}
+        self.__recovered = {}
+        
         self.__transmission_probability = tp
         self.__recovery_probability = rp
         
@@ -130,7 +137,7 @@ class Graph(object):
         
         :rtype graphism.node.Node:
         """
-        return self.__nodes.get(name, None)
+        return self.__susceptible.get(name, None)
     
     def add_node(self, node):
         """
@@ -140,8 +147,8 @@ class Graph(object):
         
         :rtype graphism.node.Node: 
         """
-        if node.name() not in self.__nodes:
-            self.__nodes[node.name()] = node
+        if node.name() not in self.__susceptible:
+            self.__susceptible[node.name()] = node
         return node
         
     def add_edge(self, from_, to_):
@@ -153,9 +160,9 @@ class Graph(object):
         
         :rtype tuple(graphism.node.Node, graphism.node.Edge, graphism.node.Node: A tuple of the parent node, edge, and child node.
         """
-        if from_ not in self.__nodes:
+        if from_ not in self.__susceptible:
             self.add_node(from_)
-        if to_ not in self.__nodes:
+        if to_ not in self.__susceptible:
             self.add_node(to_)
             
         from_.add_child(to_)
@@ -207,21 +214,45 @@ class Graph(object):
         """
         self.__infected[node.name()] = node
         
-    def remove_infected(self, node):
+    def add_recovered(self, node):
         """
-        Removes a node form the list of infected nodes
+        Adds a node to the list of recovered nodes
         
         """
-        if node.name() in self.__infected:
-            del self.__infected[node.name()]
+        self.__recovered[node.name()] = node
+        
+    def remove_infected(self, node):
+        """
+        Removes a node from the list of infected nodes
+        
+        """
+        del self.__infected[node.name()]
+            
+    def remove_susceptible(self, node):
+        """
+        Removes a node from the list of susceptible nodes.
+        
+        """
+        del self.__susceptible[node.name()]
     
     def nodes(self):
         """
-        Returns the internal nodes as a set.
+        Returns the internal nodes as a set. Deprecated.
         
         :rtype set(graphism.node.Node):
         """
-        return set(self.__nodes.values())
+        sys.stderr.write("Graph.nodes() is deprecated. Use Graph.susceptible()\n")
+        return self.susceptible()
+    
+    def is_susceptible(self, node):
+        """
+        Indicates if the node is or isn't susceptible to infection
+        
+        :param graphism.node.Node node: The node to indicate the status of
+        
+        :rtype bool: True if the node is susceptible. False otherwise
+        """
+        return node.name() in self.__susceptible
     
     def susceptible(self):
         """
@@ -229,16 +260,16 @@ class Graph(object):
         
         :rtype set(graphism.node.Node):
         """
-        return self.nodes().difference(self.infected())
+        return set(self.__susceptible.values())
     
     def propagate(self):
         """
         First recovers infected nodes according to the probability of recovery. 
         Second, propagates infections from infected nodes according to the probability of transmission. 
-        
+
         """
         self.recover()
-            
+
         for n in self.infected():
             n.propagate_infection(self.__infection)
             
@@ -246,9 +277,10 @@ class Graph(object):
         """
         Executes the recovery function for each infected node and subsequently 
         removes it from the 'infected' set iff that node recovered.
-        
+
         """
         for n in self.infected():
-            n.recover(self.__recovery) # Returns true if recovered, false if not
+            if n.recover(self.__recovery): # Returns true if recovered, false if not
+                self.remove_infected(n)
+                self.add_recovered(n)
 
-    

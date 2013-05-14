@@ -15,13 +15,13 @@ except:
 
 from graphism import graph as g
 
-NODES = 500
+NODES = 100
 PERIOD = 500
 infection_curves = []
 SEEDS = 5 # nodes initially infected
 TRANSMISSION_PROBABILITY = 0.01 # *100 = percent
 RECOVERY_PROBABILITY = 0.04 # *100 = percent
-ITERATIONS = 1
+ITERATIONS = 50
 
 if __name__ == '__main__':
     
