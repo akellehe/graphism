@@ -183,6 +183,7 @@ class Node(object):
             infection_function(self)
         
         if self.__graph():
+            self.__graph().remove_susceptible(self)
             self.__graph().add_infected(self)
         
         return self.__infection_function
@@ -199,8 +200,7 @@ class Node(object):
             else:
                 self.__recovery_function(self)
             self.__recovery_function(self) 
-            if self.__graph():
-                self.__graph().remove_infected(self)
+
             return True
         return False
                         
@@ -226,9 +226,10 @@ class Node(object):
                         nodes.add(edge.parent)
                 
             for n in nodes:
-                probability = self.transmission_probability(n())
-                if random.random() < probability:
-                    n().infect(l) # It transmits!
+                if not self.__graph() or (self.__graph() and self.__graph().is_susceptible(n())):
+                    probability = self.transmission_probability(n())
+                    if random.random() < probability:
+                        n().infect(l) # It transmits!
             
     def transmission_probability(self, to_node, probability_function=None):
         """
