@@ -10,6 +10,7 @@ class Edge(object):
     :param str type_: The type of edge
     :param float weight_: The weight of the edge.
     :param bool directed: Whether or not the edge is directed.
+    :param function length: A function returning the length of the edge. Takes the edge as the only argument.
     """    
     node = None
     multiplicity = None
@@ -19,7 +20,7 @@ class Edge(object):
     child = None
     parent = None
     
-    def __init__(self, parent, child, multiplicity=1L, type_=None, weight_=1.0, directed=False):
+    def __init__(self, parent, child, multiplicity=1L, type_=None, weight_=1.0, directed=False, length=None):
         assert isinstance(parent, weakref.ref)
         assert isinstance(child, weakref.ref)
         
@@ -29,6 +30,8 @@ class Edge(object):
         self.type_ = type_
         self.weight_ = weight_
         self.directed = directed
+        
+        self.__length = length or (lambda e: e.weight_)
         
         self.__parent_name = parent().name()
         self.__child_name = child().name()
@@ -47,3 +50,5 @@ class Edge(object):
         parent().add_edge(child().name(), self)
         child().add_edge(parent().name(), self)
 
+    def length(self):
+        return self.__length(self)

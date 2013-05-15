@@ -20,8 +20,9 @@ class Node(object):
     __recovery_probability = None
     __recovery_function = None
     __graph = None
+    __length = None
     
-    def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None, graph=None):
+    def __init__(self, parents=None, children=None, name=None, transmission_probability=None, recovery_probability=None, graph=None, length=None):
         """
         Instantiates a node in a graph. 
         
@@ -29,6 +30,9 @@ class Node(object):
         :param list(graphism.node.Node) children: A list of child nodes. They are added as children to this node.
         :param str name: The name of the node. Must be unique for each node in the graph.
         :param function transmission_probability: Takes two arguments of type graphism.node.Node. The first positional argument is the parent node, the second is the child. The output should be the probability of an infection transmitting from the parent to the child over one exposure. The output should be a float in [0,1].
+        :param function recovery_probability: The probability of a node recovering from infection
+        :param function graphism.graph.Graph: The graph this node belongs to.
+        :param function length: A function returning the length of an edge given the edge as the only argument.
         """
         self.__parents = set([])
         self.__children = set([])
@@ -38,6 +42,9 @@ class Node(object):
         self.__recovery_probability = recovery_probability or rp
         
         self.__graph = return_none
+
+        self.__length = length
+        
         if graph:
             self.__graph = weakref.ref(graph)
         
@@ -59,6 +66,40 @@ class Node(object):
         
         """
         return self.__name
+
+    def __getattr__(self, node_name):
+        """
+        Returns the edge from self to the node identified by node_name
+        
+        :rtype graphism.edge.Edge:
+        """
+        return self.__edges[node_name]
+
+    def __getitem__(self, node_name):
+        """
+        Returns the edge from self to the node identified by node_name
+        
+        :rtype graphism.edge.Edge:
+        """
+        return self.__edges[node_name]
+
+    def __iter__(self):
+        """
+        Makes node iterable. Iterates over children of the node (e.g. node this node can transmit to)
+        
+        """
+        children = set([])
+        for edge in self.edges().values():
+            if edge.directed and self is edge.parent():
+                children.add(edge.child)
+            else:
+                if self is not edge.child():
+                    children.add(edge.child)
+                elif self is not edge.parent():
+                    children.add(edge.parent)
+                    
+        for child in children:
+            yield child()
 
     def add_edge(self, name, edge):
         """
@@ -130,7 +171,8 @@ class Node(object):
         edge = Edge(parent=weakref.ref(parent_node), 
                     child=weakref.ref(self),
                     type_=type_,
-                    weight_=weight_)
+                    weight_=weight_,
+                    length=self.__length)
                     
         return self.__edges[node_name].multiplicity
     
@@ -149,7 +191,8 @@ class Node(object):
         edge = Edge(parent=weakref.ref(self),
                     child=weakref.ref(child_node),
                     type_=type_,
-                    weight_=weight_)
+                    weight_=weight_,
+                    length=self.__length)
 
         return self.__edges[node_name].multiplicity
         
@@ -183,6 +226,7 @@ class Node(object):
             infection_function(self)
         
         if self.__graph():
+            self.__graph().remove_susceptible(self)
             self.__graph().add_infected(self)
         
         return self.__infection_function
@@ -199,8 +243,7 @@ class Node(object):
             else:
                 self.__recovery_function(self)
             self.__recovery_function(self) 
-            if self.__graph():
-                self.__graph().remove_infected(self)
+
             return True
         return False
                         
@@ -224,11 +267,12 @@ class Node(object):
                         nodes.add(edge.child)
                     elif self is not edge.parent():
                         nodes.add(edge.parent)
-                
+
             for n in nodes:
-                probability = self.transmission_probability(n())
-                if random.random() < probability:
-                    n().infect(l) # It transmits!
+                if not self.__graph() or (self.__graph() and self.__graph().is_susceptible(n())):
+                    probability = self.transmission_probability(n())
+                    if random.random() < probability:
+                        n().infect(l) # It transmits!
             
     def transmission_probability(self, to_node, probability_function=None):
         """

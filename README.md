@@ -10,7 +10,7 @@ You can install via pip using git+ssh
 
 `pip install git+ssh://git@github.com/akellehe/graphism.git#egg=graphism`
 
-There are currently no additional Python packages required.
+You may have to install some external dependencies (like gfortan for numpy) independently.
 
 Running Tests
 =============
