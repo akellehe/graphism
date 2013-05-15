@@ -6,12 +6,13 @@ import weakref
 from graphism.tests import TestApi
 
 from graphism.node import Node
+from graphism.edge import Edge
 from graphism.graph import Graph
 
 import sys
 
 class GraphTest(TestApi):
-    
+
     def test_init_positional_edge(self):
         g = Graph([(1,2),(1,3),(1,4),(1,5)])
         
@@ -26,7 +27,7 @@ class GraphTest(TestApi):
             assert n.degree() == 1
         
     def test_init_advanced_defs(self):
-        g = Graph(graph=[{'from_': 1,
+        g = Graph(edges=[{'from_': 1,
                           'to_': 2,
                           'type_': 'first',
                           'weight_': 1.0
@@ -161,5 +162,69 @@ class GraphTest(TestApi):
         assert not not recovered
         
         assert len(after) < len(before)        
+    
+    def test_set_transmission_function_in_constructor(self):
         
+        target = [False]
+        def trans(a,b):
+            target[0] = True
+            return 1
+            
+        g = Graph([(1,2)], 
+                  transmission_probability=trans)
+        
+        g.infect_seeds([g.get_node_by_name(1)])
+        
+        g.propagate()
+        
+        assert target[0]
+        
+    def test_node_iterator(self):
+        g = Graph([(1,2),(1,3),(1,4),(2,3)])        
+        
+        nodes = []
+        at_two = []
+        
+        for n in g[1]:
+            assert isinstance(n, Node)
+            nodes.append(n)
+            
+        for n in g[2]:
+            at_two.append(n)
+            
+        assert len(at_two) == 2, "Expected %s Got %s" % (1, len(at_two))
+        assert len(nodes) == 3
+        
+    def test_graph_iterator(self):
+        g = Graph([(1,2),(1,3),(1,4)]) 
+        
+        nodes = []
+        
+        for n in g:
+            assert isinstance(n, Node)
+            nodes.append(n)
+            
+        assert len(nodes) == 4
+        
+    def test_closeness(self):
+        g = Graph([(1,2),(2,3),(3,4)]) 
+        
+        one = g[1]
+        four = g[4]            
+        
+        closeness, path = g.closeness(one, four)
+        assert closeness == 3.0
+
+        g = Graph([(1,2),(2,3),(3,4)],
+                  length=lambda e: e.weight_/2.0)
+        
+        one = g[1]
+        four = g[4]
+        
+        closeness, path = g.closeness(one, four)
+        
+        assert closeness == 1.5
+        
+        
+            
         
