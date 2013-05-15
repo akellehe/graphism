@@ -224,7 +224,7 @@ class Node(object):
                         nodes.add(edge.child)
                     elif self is not edge.parent():
                         nodes.add(edge.parent)
-                
+
             for n in nodes:
                 if not self.__graph() or (self.__graph() and self.__graph().is_susceptible(n())):
                     probability = self.transmission_probability(n())
