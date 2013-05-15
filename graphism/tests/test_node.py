@@ -11,7 +11,7 @@ from graphism.graph import Graph
 import sys
 
 class NodeTest(TestApi):
-
+    
     def test_node_naming(self):
         self.graph = Graph()
         self.nodes = []
@@ -222,8 +222,7 @@ class NodeTest(TestApi):
         
         infected = float(len(filter(lambda n: n.infected, children)))
         assert infected / 1000.0 <= 10.0 / 1000.0
-        
-    
+
 
 if __name__ == '__main__':
     unittest.main()
