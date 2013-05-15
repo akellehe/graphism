@@ -11,7 +11,7 @@ from graphism.graph import Graph
 import sys
 
 class GraphTest(TestApi):
-    
+
     def test_init_positional_edge(self):
         g = Graph([(1,2),(1,3),(1,4),(1,5)])
         
@@ -26,7 +26,7 @@ class GraphTest(TestApi):
             assert n.degree() == 1
         
     def test_init_advanced_defs(self):
-        g = Graph(graph=[{'from_': 1,
+        g = Graph(edges=[{'from_': 1,
                           'to_': 2,
                           'type_': 'first',
                           'weight_': 1.0
@@ -161,5 +161,23 @@ class GraphTest(TestApi):
         assert not not recovered
         
         assert len(after) < len(before)        
+    
+    def test_set_transmission_function_in_constructor(self):
         
+        target = [False]
+        def trans(a,b):
+            target[0] = True
+            return 1
+            
+        g = Graph([(1,2)], 
+                  transmission_probability=trans)
+        
+        g.infect_seeds([g.get_node_by_name(1)])
+        
+        g.propagate()
+        
+        assert target[0]
+        
+        
+            
         

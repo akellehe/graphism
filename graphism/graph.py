@@ -24,7 +24,9 @@ class Graph(object):
     :param bool directed: If set to False the graph will be undirected and transmissions can occur from child-to-parent as well as parent-to-child
     :param function transmission_probability: The transmission probability function. Should take two arguments of type graphism.node.Node. The first positional argument is the parent (infection host), the second is the child. 
     :param function recovery_probability: The recovery probability function. Should take a single objet of type graphism.node.Node. Returns a float on [0,1] indicating the probability of recovery for the node.
-    :param list(dict) graph: You can optionally pass the graph as a keyword argument instead of the first positional argument.
+    :param function infection: The callback function to execute when a new node is infected. Takes the node as the only argument.
+    :param function recovery: The callback function to execute when a node recovers from infection. Takes the node as the only argument.
+    :param list(dict) edges: You can optionally pass the graph as a keyword argument instead of the first positional argument.
     
     """
     __susceptible = None
@@ -41,17 +43,17 @@ class Graph(object):
         self.__susceptible = {}
         self.__infected = {}
         self.__recovered = {}
-        
-        self.__transmission_probability = tp
-        self.__recovery_probability = rp
-        
-        if 'graph' in kwargs:
+                
+        self.__transmission_probability = kwargs.get('transmission_probability', tp)
+        self.__recovery_probability = kwargs.get('recovery_probability', rp)
+                
+        if 'edges' in kwargs:
             self.__init_nodes_from_kwargs(kwargs)
         elif args:
             self.__init_nodes_from_args(args, kwargs)
             
-        self.set_infection(return_none_from_one)
-        self.set_recovery(return_none_from_one)
+        self.set_infection(kwargs.get('infection', return_none_from_one))
+        self.set_recovery(kwargs.get('recovery', return_none_from_one))
     
     def add_edge_by_node_sequence(self, parent, child, directed=None, transmission_probability=None, type_=None, weight_=1.0, recovery_probability=None):
         """
@@ -90,12 +92,10 @@ class Graph(object):
         :param dict kwargs: The keyword arguments for the __init__ method.
         
         """
-        graph = kwargs['graph']
+        edges = kwargs['edges']
         directed = kwargs.get('directed', False)
-        transmission_probability=kwargs.get('transmission_probability', None)
-        recovery_probability=kwargs.get('recovery_probability', None)
         
-        for edge in graph:
+        for edge in edges:
             parent = edge['from_']
             child = edge['to_']
             type_ = edge.get('type_', None)
@@ -104,10 +104,10 @@ class Graph(object):
             self.add_edge_by_node_sequence(parent=parent, 
                                            child=child, 
                                            directed=directed, 
-                                           transmission_probability=transmission_probability, 
+                                           transmission_probability=self.__transmission_probability, 
                                            type_=type_, 
                                            weight_=weight_, 
-                                           recovery_probability=recovery_probability)
+                                           recovery_probability=self.__recovery_probability)
         
     def __init_nodes_from_args(self, args, kwargs):
         """
@@ -119,15 +119,13 @@ class Graph(object):
         """
         graph = args[0]
         directed = kwargs.get('directed', False)
-        transmission_probability=kwargs.get('transmission_probability', None)
-        recovery_probability=kwargs.get('recovery_probability', None)
         for edge in graph:
             parent, child = edge
             self.add_edge_by_node_sequence(parent=parent, 
                                            child=child,
                                            directed=directed,
-                                           transmission_probability=transmission_probability,
-                                           recovery_probability=recovery_probability)
+                                           transmission_probability=self.__transmission_probability,
+                                           recovery_probability=self.__recovery_probability)
     
     def get_node_by_name(self, name):
         """
@@ -264,14 +262,15 @@ class Graph(object):
     
     def propagate(self):
         """
-        First recovers infected nodes according to the probability of recovery. 
-        Second, propagates infections from infected nodes according to the probability of transmission. 
+        First infects nodes according to the probability of transmission. 
+        Second, recovers nodes depending on the probability of recovery. 
 
         """
-        self.recover()
-
         for n in self.infected():
             n.propagate_infection(self.__infection)
+        
+        self.recover()
+
             
     def recover(self):
         """
