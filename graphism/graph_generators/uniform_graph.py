@@ -9,7 +9,7 @@ def trans_prob(a, b):
   :param graphism.Node b: the susceptible node
   """
 
-  return 0.5
+  return 0.9
 
 def build( n ):
   """
