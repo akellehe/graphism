@@ -43,7 +43,7 @@ for i in range(ITERATIONS):
     for t in range(4):
       g.propagate()
 
-    infected = g[1] in g.infected()
+    infected = g[5] in g.infected() or g[5] in g.recovered()
 
     if infected:
       infections += 1

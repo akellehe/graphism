@@ -267,6 +267,14 @@ class Graph(object):
         """
         return set(self.__susceptible.values())
     
+    def recovered(self):
+        """
+        Returns the set of recovered nodes in the graph.
+        
+        :rtype set(graphism.node.Node):
+        """
+        return set(self.__recovered.values())
+    
     def propagate(self):
         """
         First infects nodes according to the probability of transmission. 
