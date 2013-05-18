@@ -16,12 +16,13 @@ except:
 from graphism import graph as g
 
 NODES = 100
-PERIOD = 500
+
+PERIOD = 24
 infection_curves = []
 SEEDS = 5 # nodes initially infected
 TRANSMISSION_PROBABILITY = 0.01 # *100 = percent
-RECOVERY_PROBABILITY = 0.04 # *100 = percent
-ITERATIONS = 50
+RECOVERY_PROBABILITY = 0.002 # *100 = percent
+ITERATIONS = 10
 
 if __name__ == '__main__':
     
@@ -55,3 +56,5 @@ if __name__ == '__main__':
     
     plt.plot([numpy.mean(tup) for tup in zip(*infection_curves)])
     plt.show()
+
+print [int(numpy.mean(tup)) for tup in zip(*infection_curves)]
