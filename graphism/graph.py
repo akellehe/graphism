@@ -135,6 +135,42 @@ class Graph(object):
                                            transmission_probability=self.__transmission_probability,
                                            recovery_probability=self.__recovery_probability)
     
+    def set_transmission_probability(self, f):
+        """
+        Allows the user to set the transmission probability function for all nodes in the graph to f
+        
+        :param function f: The new transmission probability function to use for all nodes in the graph.
+        """
+        self.__transmission_probability = f
+        for n in self.nodes():
+            n.set_transmission_probability(f)
+            
+    def set_recovery_probability(self, f):
+        """
+        Allows the user to set the recovery probability function for all nodes in the graph to f
+        
+        :param function f: The new recovery probability function to use for all nodes in the graph.
+        """
+        self.__recovery_probability = f
+        for n in self.nodes():
+            n.set_recovery_probability(f)
+            
+    def get_transmission_probability(self):
+        """
+        Getter for the graph's transmission probability function.
+        
+        :rtype function:
+        """
+        return self.__transmission_probability
+    
+    def get_recovery_probability(self):
+        """
+        Getter for the graph's recovery probability function
+        
+        :rtype function:
+        """
+        return self.__recovery_probability
+    
     def get_node_by_name(self, name):
         """
         Searches the internal dict maintaining the ONLY strong reference to internal nodes by name. Returns the node with that name.
@@ -258,23 +294,23 @@ class Graph(object):
         :rtype bool: True if the node is susceptible. False otherwise
         """
         return node.name() in self.__susceptible
-    
+
     def susceptible(self):
         """
         Returns the set of susceptible nodes in the graph.
-        
+
         :rtype set(graphism.node.Node):
         """
         return set(self.__susceptible.values())
-    
+
     def recovered(self):
         """
         Returns the set of recovered nodes in the graph.
-        
+
         :rtype set(graphism.node.Node):
         """
         return set(self.__recovered.values())
-    
+
     def propagate(self):
         """
         First infects nodes according to the probability of transmission. 
@@ -283,28 +319,28 @@ class Graph(object):
         """
         for n in self.infected():
             n.propagate_infection(self.__infection)
-        
+
         self.recover()
 
     def closeness(self, a, b):
         """
         Finds the shortest distance between a and b.
-        
+
         :param graphism.node.Node a: The first node.
         :param graphism.node.Node b: The second node.
-        
+
         :rtype tuple(float, list(str)): The closeness and a list of predecessor ids
         """
         final_distances = {}
         predecessors = []
         non_final_distances = priorityDictionary()
         non_final_distances[a.name()] = 0.0
-        
+
         for node_name in non_final_distances:
             final_distances[node_name] = non_final_distances[node_name]
             if node_name == b.name():
                 break
-            
+
             for node in self[node_name]:
                 length = final_distances[node_name] + self[node_name][node.name()].length()
                 if node.name() in final_distances:
@@ -313,9 +349,9 @@ class Graph(object):
                 elif node.name() not in non_final_distances or length < non_final_distances[node.name()]:
                     non_final_distances[node.name()] = length
                     predecessors.append(node_name)
-                    
+
         return (final_distances[b.name()], predecessors)
-        
+
     def __iter__(self):
         """
         Returns a generator over nodes in the graph.
@@ -323,7 +359,7 @@ class Graph(object):
         """
         for node in self.nodes():
             yield node
-                
+
     def __getattr__(self, node_name):
         """
         Returns the node corresponding to node_name
@@ -331,7 +367,7 @@ class Graph(object):
         :rtype graphism.node.Node: 
         """
         return self.get_node_by_name(node_name)
-    
+
     def __getitem__(self, node_name):
         """
         Returns the node corresponding to node_name
@@ -339,7 +375,7 @@ class Graph(object):
         :rtype graphism.node.Node: 
         """
         return self.__getattr__(node_name)
-            
+
     def recover(self):
         """
         Executes the recovery function for each infected node and subsequently 
@@ -350,6 +386,5 @@ class Graph(object):
             if n.recover(self.__recovery): # Returns true if recovered, false if not
                 self.remove_infected(n)
                 self.add_recovered(n)
-                
-                
+
 
