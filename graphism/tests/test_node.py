@@ -7,6 +7,7 @@ from graphism.tests import TestApi
 
 from graphism.node import Node
 from graphism.graph import Graph
+from graphism.helpers import rp, tp
 
 import sys
 
@@ -222,6 +223,49 @@ class NodeTest(TestApi):
         
         infected = float(len(filter(lambda n: n.infected, children)))
         assert infected / 1000.0 <= 10.0 / 1000.0
+
+    def test_get_and_set_recovery_probability(self):
+        target = Node()
+        
+        def a(n):
+            return 1
+        
+        def b(n):
+            return 0
+        
+        assert target.get_recovery_probability() == rp
+        
+        target.set_recovery_probability(a)
+        
+        assert target.get_recovery_probability() == a
+        assert target.recover() == True
+        
+        target.set_recovery_probability(b)
+        
+        assert target.get_recovery_probability() == b
+        assert target.recover() == False
+        
+    def test_get_and_set_transmission_probability(self):
+        target = Node()
+        asset = Node()
+        
+        def a(n, m):
+            return 1
+        
+        def b(n, m):
+            return 0
+        
+        assert target.get_transmission_probability() == tp
+        
+        target.set_transmission_probability(a)
+        
+        assert target.get_transmission_probability() == a
+        assert target.transmission_probability(asset) == 1
+        
+        target.set_transmission_probability(b)
+        
+        assert target.get_transmission_probability() == b
+        assert target.transmission_probability(asset) == 0        
 
 
 if __name__ == '__main__':

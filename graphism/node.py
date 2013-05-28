@@ -240,11 +240,10 @@ class Node(object):
         if random.random() < self.__recovery_probability(self):
             if recovery_function:
                 self.__recovery_function = recovery_function
-            else:
-                self.__recovery_function(self)
-            self.__recovery_function(self) 
-
+            if self.__recovery_function:
+                self.__recovery_function(self) 
             return True
+        
         return False
                         
     def propagate_infection(self, l=None):
@@ -273,6 +272,7 @@ class Node(object):
                     probability = self.transmission_probability(n())
                     if random.random() < probability:
                         n().infect(l) # It transmits!
+                        
             
     def transmission_probability(self, to_node, probability_function=None):
         """
@@ -287,6 +287,38 @@ class Node(object):
             return probability_function(self, to_node)
         elif self.__transmission_probability:
             return self.__transmission_probability(self, to_node)
+    
+    def set_transmission_probability(self, f):
+        """
+        Set the transmission probability function for the node.
+        
+        :param function f: The new transmission probability function for the node.
+        """
+        self.__transmission_probability = f
+        
+    def set_recovery_probability(self, f):
+        """
+        Set the recovery probability function for the node.
+        
+        :param function f: The new recovery probability function for the node.
+        """
+        self.__recovery_probability = f
+        
+    def get_transmission_probability(self):
+        """
+        Getter for the transmission probability function.
+        
+        :rtype function:
+        """
+        return self.__transmission_probability
+        
+    def get_recovery_probability(self):
+        """
+        Getter for the recovery probability function.
+        
+        :rtype function:
+        """
+        return self.__recovery_probability
         
     def is_child_of(self, node):
         """
