@@ -8,6 +8,7 @@ from graphism.tests import TestApi
 from graphism.node import Node
 from graphism.edge import Edge
 from graphism.graph import Graph
+from graphism.helpers import tp, rp
 
 import sys
 
@@ -225,6 +226,56 @@ class GraphTest(TestApi):
         
         assert closeness == 1.5
         
+    def test_get_set_transmission_probability_function(self):
+        g = Graph([(1,2),(2,3),(3,4)]) 
         
+        assert g.get_transmission_probability() == tp
+        for node in g.nodes():
+            assert node.get_transmission_probability() == tp
+        
+        def a(n, m):
+            return 1
+        
+        def b(n, m):
+            return 0
+        
+        
+        g.set_transmission_probability(a)
+        
+        assert g.get_transmission_probability() == a
+        for node in g.nodes():
+            assert node.get_transmission_probability() == a
             
+        g.set_transmission_probability(b)
+        
+        assert g.get_transmission_probability() == b
+        for node in g.nodes():
+            assert node.get_transmission_probability() == b
+            
+    def test_get_set_recovery_probability_function(self):
+        
+        g = Graph([(1,2),(2,3),(3,4)]) 
+        
+        assert g.get_recovery_probability() == rp
+        for node in g.nodes():
+            assert node.get_recovery_probability() == rp
+        
+        def a(n):
+            return 1
+        
+        def b(n):
+            return 0
+        
+        g.set_recovery_probability(a)
+        
+        assert g.get_recovery_probability() == a
+        for node in g.nodes():
+            assert node.get_recovery_probability() == a
+            
+        g.set_recovery_probability(b)
+        
+        assert g.get_recovery_probability() == b
+        for node in g.nodes():
+            assert node.get_recovery_probability() == b
+        
         
