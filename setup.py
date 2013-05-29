@@ -18,8 +18,9 @@ setup(
     "Pygments==1.6",
     "Sphinx==1.2b1",
     "docutils==0.10",
-    "pyglet==1.1.4",
-    "wsgiref==0.1.2"
+    "wsgiref==0.1.2",
+    "PyOpenGL==3.0.2",
+    "PyOpenGL-accelerate==3.0.2"
   ]
 
 )
