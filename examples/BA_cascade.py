@@ -1,5 +1,4 @@
 import graphism.graph as gg
-<<<<<<< HEAD
 import graphism.graph_generators.barabasi_albert as ba
 import graphism.graph_generators.uniform_graph as ug
 
@@ -42,18 +41,5 @@ g.infect_seeds( set([g.get_node_by_name('1'), g.get_node_by_name('2'), g.get_nod
 
 # while there are still nodes that need to recover, allow the cascade to continue propagating.  print the results at each step (total infected) to stdout.
 while( len( g.infected() ) != 0 ):
-=======
-import uniform_graph as ug
-
-def cb_fun( node ):
-  return 0
-
-N = 300
-g = ug.build_uniform_graph( N )
-g.set_infection( cb_fun )
-
-g.infect_seeds( set([g.get_node_by_name('1')]) )
-while( len(g.infected() ) < N ):
->>>>>>> added examples for cascade models
   g.propagate()
   print len( g.infected() )
