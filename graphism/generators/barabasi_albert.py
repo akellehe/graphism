@@ -13,11 +13,8 @@ def barabasi_albert( m, n, seed_graph=None ):
   cause the graph generated to prefer to keep building on the modular 
   structure that is already present.  
   
-  Required arguments are:
   :param int m: the number of edges directed from each newly added node
   :param int n: the total number of nodes the final graph should contain
-
-  Optional arguments are:
   :param graphism.graph.Graph seed_graph: the graph on which to build the final graph.  default is two nodes with one edge connecting them.
 
   """
