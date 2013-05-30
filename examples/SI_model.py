@@ -1,5 +1,5 @@
 import graphism.graph as gg
-import graphism.graph_generators.uniform_graph as ug
+import graphism.graph_generators.uniform as ug
 
 """
   This is an example of how to simulate an SIR model using the 
