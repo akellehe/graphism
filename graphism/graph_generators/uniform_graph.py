@@ -4,9 +4,8 @@ def trans_prob(a, b):
   """
   a simple transmission function, returning probability p = 0.5 for node a to infcet node b
 
-  Required parameters:
-  :param graphism.Node a: the infected node
-  :param graphism.Node b: the susceptible node
+  :param graphism.node.Node a: the infected node
+  :param graphism.node.Node b: the susceptible node
   """
 
   return 0.9
@@ -15,8 +14,8 @@ def build( n ):
   """
   Takes n, the number of nodes to be in the final graph, and returns a graph where each node is connected by one edge to every other node.  There are no self edges.  This is the graph assumed by the SIR model, so this graph can be used to simulate that model.
 
-  Required parameters:
   :param int n: the number of nodes in the final graph
+  :rtype graphism.graph.Graph: a uniform graph
   """
   n = n + 1
   edgelist = []

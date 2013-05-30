@@ -18,7 +18,7 @@ def barabasi_albert( m, n, seed_graph=None ):
   :param int n: the total number of nodes the final graph should contain
 
   Optional arguments are:
-  :param graphism.Graph seed_graph: the graph on which to build the final graph.  default is two nodes with one edge connecting them.
+  :param graphism.graph.Graph seed_graph: the graph on which to build the final graph.  default is two nodes with one edge connecting them.
 
   """
 
@@ -44,9 +44,9 @@ def choose_nodes( g, m ):
   """
   choose m nodes from the graph g, where the nodes are chosen with probabilities proportional to their total degree.
 
-  Parameters are:
-  :param graphism.Graph g: the graph from which to choose the nodes
+  :param graphism.graph.Graph g: the graph from which to choose the nodes
   :param int m: the number of nodes to choose
+  :rtype list(graphism.node.Node): list of chosen nodes
   """
   tot_deg = 0
   for node in g.nodes():
