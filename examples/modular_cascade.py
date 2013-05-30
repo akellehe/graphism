@@ -1,6 +1,6 @@
 import graphism.graph as gg
-import graphism.graph_generators.barabasi_albert as ba
-import graphism.graph_generators.uniform as ug
+import graphism.generators.barabasi_albert as ba
+import graphism.generators.uniform as ug
 
 
 def cb_fun( node ):
