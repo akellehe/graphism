@@ -49,6 +49,21 @@ class Edge(object):
         
         parent().add_edge(child().name(), self)
         child().add_edge(parent().name(), self)
+        
+    def to_dict(self):
+        """
+        Converts the graphism.edge.Edge to a dictionary representation of itself with the graphism.node.Node objects represented as a unicode of their name.
+        
+        """
+        return {
+                'from_': self.parent().name(),
+                'to_': self.child().name(),
+                'weight_': self.weight_,
+                'directed': self.directed,
+                'type_': self.type_,
+                'multiplicity': self.multiplicity,
+                'length': self.__length
+                }
 
     def length(self):
         return self.__length(self)

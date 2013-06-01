@@ -202,9 +202,9 @@ class Graph(object):
         
         :rtype tuple(graphism.node.Node, graphism.node.Edge, graphism.node.Node: A tuple of the parent node, edge, and child node.
         """
-        if from_ not in self.__susceptible:
+        if from_ not in self.nodes():
             self.add_node(from_)
-        if to_ not in self.__susceptible:
+        if to_ not in self.nodes():
             self.add_node(to_)
             
         from_.add_child(to_)
@@ -375,6 +375,25 @@ class Graph(object):
         :rtype graphism.node.Node: 
         """
         return self.__getattr__(node_name)
+    
+    def edges(self):
+        """
+        Returns the set of all the edges in the graph.
+        
+        :rtype set(graphism.edge.Edge):
+        """
+        edges = set([])
+        for n in self.nodes():
+            [edges.add(e) for e in set(n.edges().values())]
+            
+        return edges
+    
+    def export(self):
+        """
+        Returns the edgelist as a list of dictionaries to be used for initializing a new graph.
+        
+        """
+        return [e.to_dict() for e in self.edges()]
 
     def recover(self):
         """
