@@ -1,16 +1,9 @@
-import unittest
-import random 
-import time
 import weakref
 
 from graphism.tests import TestApi
 
 from graphism.node import Node
 from graphism.edge import Edge
-from graphism.graph import Graph
-from graphism.helpers import tp, rp
-
-import sys
 
 class EdgeTest(TestApi):
     
@@ -44,3 +37,4 @@ class EdgeTest(TestApi):
         assert e_d['length'](e) == 1.0
         assert e_d['type_'] == None
         assert e_d['directed'] == False 
+        

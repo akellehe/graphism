@@ -54,6 +54,7 @@ class Edge(object):
         """
         Converts the graphism.edge.Edge to a dictionary representation of itself with the graphism.node.Node objects represented as a unicode of their name.
         
+        :rtype dict: A dictionary representation of the edge.
         """
         return {
                 'from_': self.parent().name(),

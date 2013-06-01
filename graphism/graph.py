@@ -392,6 +392,7 @@ class Graph(object):
         """
         Returns the edgelist as a list of dictionaries to be used for initializing a new graph.
         
+        :rtype list(dict): Edges with attributes to be re-created.
         """
         return [e.to_dict() for e in self.edges()]
 
