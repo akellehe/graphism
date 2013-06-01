@@ -277,5 +277,15 @@ class GraphTest(TestApi):
         assert g.get_recovery_probability() == b
         for node in g.nodes():
             assert node.get_recovery_probability() == b
+            
+    def test_export(self):
+        g = Graph([(1,2),(2,3),(3,4)]) 
+
+        exported = g.export()
+        
+        g_copy = Graph(edges=exported)
+        
+        for node in g:
+            assert node.name() in [n.name() for n in g_copy.nodes()]
         
         
