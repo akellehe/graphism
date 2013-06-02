@@ -287,5 +287,56 @@ class GraphTest(TestApi):
         
         for node in g:
             assert node.name() in [n.name() for n in g_copy.nodes()]
+
+    def test_remove_node_by_name(self):
+        g = Graph([(1,2),(2,3),(3,4)]) 
         
+        assert len(g.nodes()) == 4
+        assert len(g.edges()) == 3
+        g.remove_node_by_name(1)
+        assert len(g.nodes()) == 3
+        assert len(g.edges()) == 2   
         
+    def test_basic_add_graph(self):
+        A = Graph([(1,2),(2,3),(3,4)]) 
+        B = Graph([(1,2),(2,3),(3,4)]) 
+        
+        A.add_graph(B)
+        
+        for node in A:
+            for e in node.edges().values():
+                assert e.multiplicity == 2, "Expected 2, got %s" % e.multiplicity
+                
+        for i in range(1,5):
+            assert isinstance(A.get_node_by_name(i), Node)
+
+    def test_nodes_are_overwritten_A_to_B(self):
+        A = Graph([(1,2)])
+        two = A.get_node_by_name(2)
+        two.foo = 'bar'
+        
+        B = Graph([(2,3)])
+        
+        B.add_graph(A)
+        
+        assert hasattr(B.get_node_by_name(2), 'foo')
+        assert getattr(B.get_node_by_name(2), 'foo') == 'bar'
+        
+        assert len(B.nodes()) == 3
+        assert len(B.edges()) == 2, "Expected 2, got %s" % len(B.edges())
+        
+    def test_nodes_are_overwritten_B_to_A(self):
+        A = Graph([(1,2)])
+        two = A.get_node_by_name(2)
+        two.foo = 'bar'
+        
+        B = Graph([(2,3)])
+        
+        A.add_graph(B)
+        
+        assert not hasattr(A.get_node_by_name(2), 'foo')
+                
+        assert len(A.nodes()) == 3, "Expected 3, got %s" % len(A.nodes())
+        assert len(A.edges()) == 2, "Expected 2, got %s" % len(A.edges())
+        
+

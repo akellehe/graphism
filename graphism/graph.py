@@ -183,14 +183,15 @@ class Graph(object):
     
     def add_node(self, node):
         """
-        Adds a node to the graph.
+        Adds a node to the graph. Only one graph can 'own' a node, so this will reassign the parent graph.
         
         :param graphism.node.Node node: The node to add.
         
         :rtype graphism.node.Node: 
         """
-        if node.name() not in self.__susceptible:
+        if node not in self.nodes():
             self.__susceptible[node.name()] = node
+            node.set_graph(self)
         return node
         
     def add_edge(self, from_, to_):
@@ -407,4 +408,65 @@ class Graph(object):
                 self.remove_infected(n)
                 self.add_recovered(n)
 
+    def remove_node_by_name(self, node_name):
+        """
+        Deletes a node from the graph
+         
+        """
+        if node_name in self.__infected:
+            del self.__infected[node_name]
+        if node_name in self.__susceptible:
+            del self.__susceptible[node_name]
+        if node_name in self.__recovered:
+            del self.__recovered[node_name]
 
+    def add_graph(self, subgraph):
+        """
+        Adds a graph to the existing graph as a set of edges. If a node does not exist in the current graph it's created. If an edge already exists it's multiplicity is updated. If a node already exists it's overwritten by the node in the subgraph. 
+        
+        :param graphism.graph.Graph subgraph: The graph to add to the existing graph.
+        
+        :rtype graphism.graph.Graph: The new graph
+        """
+        edges = subgraph.export()
+        existing_nodes = set([])
+        new_nodes = set([])
+        existing_edges = set([])
+
+        # Store references to the nodes to resolve in both graphs
+        for edge in edges:
+            existing_nodes.add(self.get_node_by_name(edge['from_']))
+            existing_nodes.add(self.get_node_by_name(edge['to_']))
+            new_nodes.add(subgraph.get_node_by_name(edge['from_']))
+            new_nodes.add(subgraph.get_node_by_name(edge['to_']))
+
+        # Store the existing edges to be added back in
+        for node in existing_nodes:
+            if node:
+                for edge in node.edges().values():
+                    existing_edges.add(edge)
+        existing_edges = [e.to_dict() for e in existing_edges]
+
+        # Clear out existing nodes
+        for node in existing_nodes:
+            if node:
+                self.remove_node_by_name(node.name())
+                del node
+        existing_nodes = None
+
+        # Add nodes from the subgraph to this graph, orphaned
+        for node in new_nodes:
+            node.orphan()
+            self.add_node(node)
+
+        edge_names = [e.child().name() for e in self.edges()] + [e.parent().name() for e in self.edges()]
+
+        # Add the edges back into the graph
+        for edge in edges + existing_edges:
+            self.add_edge_by_node_sequence(parent=edge['from_'], 
+                                           child=edge['to_'], 
+                                           directed=edge['directed'], 
+                                           type_=self.type_, 
+                                           weight_=self.weight_, 
+                                           transmission_probability=self.__transmission_probability, 
+                                           recovery_probability=self.__recovery_probability)            

@@ -169,6 +169,15 @@ class NodeTest(TestApi):
         
         assert child.degree() == 0L, "Child degree is: %s" % child.degree()
         
+    def test_graph_node_cleanup(self):
+        g = Graph([(1,2),(2,3)])
+        
+        two = g.get_node_by_name(2)
+        
+        del two
+        
+        assert len(g.edges()) == 0, "Expected 0, got %s" % len(g.edges())
+        
     def test_transmission_probability(self):
         parent = Node()
         child = Node()

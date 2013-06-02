@@ -59,6 +59,17 @@ class Node(object):
             self.__name = name
         else:
             self.__name = str(random.random()) + str(time.time())
+            
+    def set_graph(self, graph):
+        """
+        Changes the graph this node belongs to.
+        
+        :param graphism.graph.Graph graph: The new parent graph.
+        
+        :rtype None:
+        """
+        if graph:
+            self.__graph = weakref.ref(graph)
     
     def name(self):
         """
@@ -140,21 +151,35 @@ class Node(object):
         """
         self.__children.remove(wr)
 
-    def parents(self):
+    def parents(self, parents=None):
         """
         Getter for the list of parent nodes.
         
         :rtype set(weakref.ref(graphism.node.Node)):
         """
+        if parents:
+            self.__parents = parents
         return self.__parents
     
-    def children(self):
+    def children(self, children=None):
         """
         Getter for the list of child nodes.
         
         :rtype set(weakref.ref(graphism.node.Node)):
         """
+        if children:
+            self.__children = children
         return self.__children
+
+    def orphan(self):
+        """
+        Orphans the node. (removes parents and children)
+        
+        """
+        self.__children = set([])
+        self.__parents = set([])
+        self.__edges = {}
+        self.degree(0L)
 
     def add_parent(self, parent_node, type_=None, weight_=1.0):
         """
