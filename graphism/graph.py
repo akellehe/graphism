@@ -42,6 +42,8 @@ class Graph(object):
     
     __length = None
     
+    __edges = None
+    
     def __init__(self, *args, **kwargs):
         self.__susceptible = {}
         self.__infected = {}
@@ -51,6 +53,8 @@ class Graph(object):
                 
         self.__transmission_probability = kwargs.get('transmission_probability', tp)
         self.__recovery_probability = kwargs.get('recovery_probability', rp)
+        
+        self.__edges = {}
                 
         if 'edges' in kwargs:
             self.__init_nodes_from_kwargs(kwargs)
@@ -88,10 +92,21 @@ class Graph(object):
                      graph=self,
                      length=self.__length)
         
-        p.add_child(c, type_=type_, weight_=weight_)
+        self.add_edge(p, c, type_=type_, weight_=weight_)
         
-        self.add_node(p)
-        self.add_node(c)
+    def get_edge_by_parent_and_child_name(self, parent_name, child_name):
+        """
+        Returns the edge corresponding to the parent and child.
+        
+        :param unicode parent_name: The name of the parent node in the edge.
+        :param unicode child_name: The name of the child node in the edge.
+        
+        :rtype graphism.edge.Edge: The corresponing edge.
+        """
+        if parent_name in self.__edges and child_name in self.__edges[parent_name]:
+            return self.__edges[parent_name][child_name]
+            
+        return None
     
     def __init_nodes_from_kwargs(self, kwargs):
         """
@@ -193,8 +208,42 @@ class Graph(object):
             self.__susceptible[node.name()] = node
             node.set_graph(self)
         return node
+    
+    def register_edge(self, edge):
+        """
+        Registers the edge for retrieval from the graph.
         
-    def add_edge(self, from_, to_):
+        :param graphism.edge.Edge edge: The edge to register
+        
+        """
+        print "Registering (%s,%s)" % (edge.parent().name(), edge.child().name())
+        if edge.parent().name() not in self.__edges:
+            self.__edges[edge.parent().name()] = {}
+        self.__edges[edge.parent().name()][edge.child().name()] = edge
+        
+    def remove_edges_by_node_name(self, name):
+        """
+        Removes edges when passed a node name.
+        
+        :param str name: The name of the node to remove all associated edges from the graph for.
+        """
+        to_delete = []
+        for parent_name, ref in self.edge_dict().items():
+            if parent_name == name:
+                to_delete.append((parent_name, None))
+                continue
+            for child_name, edge in ref.items():
+                if child_name == name:
+                    to_delete.append((parent_name, child_name))
+
+        for parent_name, child_name in to_delete:
+            if parent_name and child_name:
+                del self.edge_dict()[parent_name][child_name]
+            else:
+                del self.edge_dict()[parent_name]
+        
+        
+    def add_edge(self, from_, to_, type_=None, weight_=1.0):
         """
         Creates an edge between two nodes in the graph.
         
@@ -208,9 +257,13 @@ class Graph(object):
         if to_ not in self.nodes():
             self.add_node(to_)
             
-        from_.add_child(to_)
+        from_.add_child(to_, type_=type_, weight_=weight_)
         
-        return (from_, from_.edges()[to_.name()], to_)
+        edge = from_.edges()[to_.name()]
+        
+        self.register_edge(edge)
+        
+        return (from_, edge, to_)
         
         
     def set_infection(self, callback):
@@ -377,7 +430,15 @@ class Graph(object):
         """
         return self.__getattr__(node_name)
     
-    def edges(self):
+    def edge_dict(self):
+        """
+        Returns the internal dict of edges.
+        
+        :rtype dict(str=>dict(str=>graphism.edge.Edge)): The first str key is the parent node's name. The second str key is the child node's name.
+        """
+        return self.__edges
+    
+    def edges_from_nodes(self):
         """
         Returns the set of all the edges in the graph.
         
@@ -387,6 +448,20 @@ class Graph(object):
         for n in self.nodes():
             [edges.add(e) for e in set(n.edges().values())]
             
+        return edges
+    
+    def edges(self):
+        """
+        Returns the set of add edges in the graph (registered in the internal dict).
+        
+        :rtype set(graphism.edge.Edge):
+        """
+        print self.__edges
+        edges = set([])
+        for parent_name, ref in self.__edges.items():
+            for child_name, edge in ref.items():
+                print "Exportin (%s,%s)" % (parent_name, child_name)
+                edges.add(edge)
         return edges
     
     def export(self):

@@ -71,6 +71,14 @@ class Node(object):
         if graph:
             self.__graph = weakref.ref(graph)
     
+    def graph(self):
+        """
+        A getter for the parent graph (if it's set. else returns None).
+        
+        :rtype graphism.graph.Graph:
+        """
+        return self.__graph()
+    
     def name(self):
         """
         Returns the node's name
@@ -123,11 +131,12 @@ class Node(object):
             self.__edges[name].multiplicity += 0.5
         else:
             self.__edges[name] = edge
+    
         self.degree(1L)
 
     def remove_all_edges_by_name(self, name):
         """
-        Removes all edges in the graph associated with the node named name.
+        Removes all edges in the node associated with the node named name.
         
         :param str name: The name of the node to remove all edges from.
         """
@@ -179,6 +188,10 @@ class Node(object):
         self.__children = set([])
         self.__parents = set([])
         self.__edges = {}
+        
+        if self.__graph():
+            self.__graph().remove_edges_by_node_name(self.name())
+        
         self.degree(0L)
 
     def add_parent(self, parent_node, type_=None, weight_=1.0):

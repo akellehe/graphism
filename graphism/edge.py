@@ -39,10 +39,14 @@ class Edge(object):
         def parent_cleanup(wr):
             self.parent().remove_child_ref(wr) 
             self.parent().remove_all_edges_by_name(self.__child_name)
-        
+            if self.parent().graph():
+                self.parent().graph().remove_edges_by_node_name(self.__child_name)
+         
         def child_cleanup(wr):
             self.child().remove_parent_ref(wr)
             self.child().remove_all_edges_by_name(self.__parent_name)
+            if self.child().graph():
+                self.child().graph().remove_edges_by_node_name(self.__parent_name)
             
         child().parents().add(weakref.ref(parent(), child_cleanup))
         parent().children().add(weakref.ref(child(), parent_cleanup))

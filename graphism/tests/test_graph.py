@@ -338,5 +338,13 @@ class GraphTest(TestApi):
                 
         assert len(A.nodes()) == 3, "Expected 3, got %s" % len(A.nodes())
         assert len(A.edges()) == 2, "Expected 2, got %s" % len(A.edges())
+
+    def test_remove_edges_by_node_name(self):
+        gr = Graph([(1,2),(2,3),(3,4)]) 
         
+        assert len(gr.edges()) == 3, "Expected 3, got %s" % len(gr.edges())
+        
+        gr.remove_edges_by_node_name(2)
+        
+        assert len(gr.edges()) == 1
 
