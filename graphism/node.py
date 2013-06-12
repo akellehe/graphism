@@ -10,5 +10,12 @@ class Node(object):
     Represents a node in a graph.
     
     """
-    children = set([])
-    parents = set([])
+    children = None
+    parents = None
+    name = None
+    
+    def __init__(self, name, graph=None):
+        self.name = name
+        self.graph = graph
+        self.children = set([])
+        self.parents = set([])

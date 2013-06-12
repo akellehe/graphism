@@ -37,6 +37,13 @@ class Graph(object):
     __infected = None
     __recovered = None
     
+    __directed = None
+    __transmission_probability = None
+    __recovery_probability = None
+    __infection = None
+    __recovery = None
+    __edgelist = None
+    
     def _simple_init(self, edges):
         for parent, child in edges:
             self.add_edge(parent, child)
@@ -53,10 +60,18 @@ class Graph(object):
         self.__infected = set([])
         self.__recovered = set([])
         
+        self.__directed = directed
+        self.__transmission_probability = transmission_probability
+        self.__recovery_probability = recovery_probability
+        self.__infection = infection
+        self.__recovery = recovery
+        
+        self.__edgelist = []
+        
         if len(edges[0]) == 2: # For simple edge lists:
-            self._simple_init(edges, directed, transmission_probability, recovery_probability, infection, recovery)
+            self._simple_init(edges)
         else: # For full edge exports:
-            self._complex_init(edges, directed, transmission_probability, recovery_probability, infection, recovery)
+            self._complex_init(edges)
 
     def edge(self, parent, child):
         """
@@ -71,6 +86,10 @@ class Graph(object):
             return self.__edges[parent][child]
         else:
             return None
+
+    def add_node(self, name):
+        if name not in self.__nodes:
+            self.__nodes[name] = Node(name, graph=self)
 
     def add_edge(self, parent, child, weight=1.0, multiplicity=1L):
         """
@@ -88,10 +107,12 @@ class Graph(object):
             edge.multiplicity += 1L
         else:
             edge = Edge(parent, child, multiplicity=multiplicity, weight=weight, graph=self)
-            if parent not in self.__nodes:
-                self.__nodes[parent] = Node(parent, graph=self)
-            if child not in self.__nodes:
-                self.__nodes[child] = Node(child, graph=self)
+            
+            self.__edgelist.append(edge)
+            
+            self.add_node(parent)
+            self.add_node(child)
+            
             if parent in self.__edges:
                 self.__edges[parent][child] = edge
             else:
@@ -105,3 +126,11 @@ class Graph(object):
         :rtype list(graphism.node.Node):
         """
         return self.__nodes.values()
+    
+    def edges(self):
+        """
+        Returns a unique list of all the edges in the graph.
+        
+        :rtype list(graphism.edge.Edge):
+        """
+        return self.__edgelist
