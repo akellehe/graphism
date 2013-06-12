@@ -2,6 +2,8 @@ import unittest
 import random 
 import time
 import weakref
+import sys
+import tempfile
 
 from graphism.tests import TestApi
 
@@ -10,7 +12,7 @@ from graphism.edge import Edge
 from graphism.graph import Graph
 from graphism.helpers import tp, rp
 
-import sys
+
 
 class GraphTest(TestApi):
     
@@ -133,3 +135,31 @@ class GraphTest(TestApi):
         g.reset()
         
         assert len(g.susceptible()) == 100, len(g.susceptible())        
+        
+    def test_load_and_save(self):
+        file = tempfile.mkstemp()
+        path = file[1]
+        edges = []
+        for i in range(100):
+            for j in range(100):
+                if i == j:
+                    continue
+                edges.append((i,j))
+        g = Graph(edges)
+        
+        g.infect_seeds([g[i] for i in range(100)])
+        
+        g.recover()
+        
+        assert len(g.infected()) > 35 and len(g.infected()) < 65, len(g.infected())
+        assert len(g.recovered()) > 35 and len(g.recovered()) < 65, len(g.recovered())
+        
+        a = Graph([(1,2)])
+        
+        g.save(path)
+        a.load(path)
+        
+        assert len(a.edges()) == len(g.edges())
+        assert len(a.nodes()) == len(g.nodes())
+        assert len(a.infected()) > 35 and len(a.infected()) < 65, len(a.infected())
+        assert len(a.recovered()) > 35 and len(a.recovered()) < 65, len(a.recovered())        

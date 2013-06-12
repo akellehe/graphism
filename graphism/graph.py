@@ -32,20 +32,20 @@ class Graph(object):
     :param function recovery: The callback function to execute when a node recovers from infection. Takes the node as the only argument. (type graphism.node.Node)
     
     """
-    __nodes = None
-    __edges = None
+    _nodes = None
+    _edges = None
     
-    __susceptible = None
-    __infected = None
-    __recovered = None
+    _susceptible = None
+    _infected = None
+    _recovered = None
     
-    __directed = None
-    __transmission_probability = None
-    __recovery_probability = None
-    __infection = None
-    __recovery = None
-    __susceptibility = None
-    __edgelist = None
+    _directed = None
+    _transmission_probability = None
+    _recovery_probability = None
+    _infection = None
+    _recovery = None
+    _susceptibility = None
+    _edgelist = None
     
     def _simple_init(self, edges):
         for parent, child in edges:
@@ -56,37 +56,37 @@ class Graph(object):
             self.add_edge(**edge_metadata)
             
     def __getitem__(self, key):
-        return self.__nodes[key]
+        return self._nodes[key]
     
     def _getstate(self):
-        return {'__nodes': self.__nodes,
-                '__edges': self.__edges,
-                '__susceptible': self.__susceptible,
-                '__infected': self.__infected,
-                '__recovered': self.__recovered,
-                '__directed': self.__directed,
-                '__transmission_probability': self.__transmission_probability,
-                '__recovery_probability': self.__recovery_probability,
-                '__infection': self.__infection,
-                '__susceptibility': self.__susceptibility,
-                '__edgelist': self.__edgelist }
+        return {'_nodes': self._nodes,
+                '_edges': self._edges,
+                '_susceptible': self._susceptible,
+                '_infected': self._infected,
+                '_recovered': self._recovered,
+                '_directed': self._directed,
+                '_transmission_probability': self._transmission_probability,
+                '_recovery_probability': self._recovery_probability,
+                '_infection': self._infection,
+                '_susceptibility': self._susceptibility,
+                '_edgelist': self._edgelist }
     
     def __init__(self, edges, directed=False, transmission_probability=None, recovery_probability=None, infection=None, recovery=None, susceptibility=None):
-        self.__nodes = {}
-        self.__edges = {}
+        self._nodes = {}
+        self._edges = {}
 
-        self.__susceptible = set([])
-        self.__infected = set([])
-        self.__recovered = set([])
+        self._susceptible = set([])
+        self._infected = set([])
+        self._recovered = set([])
         
-        self.__directed = directed
-        self.__transmission_probability = transmission_probability or tp
-        self.__recovery_probability = recovery_probability or rp
-        self.__infection = infection or (lambda n: None)
-        self.__recovery = recovery or (lambda n: None)
-        self.__susceptibility = susceptibility or (lambda n: None)
+        self._directed = directed
+        self._transmission_probability = transmission_probability or tp
+        self._recovery_probability = recovery_probability or rp
+        self._infection = infection or return_none_from_one
+        self._recovery = recovery or return_none_from_one
+        self._susceptibility = susceptibility or return_none_from_one
         
-        self.__edgelist = []
+        self._edgelist = []
         
         if len(edges[0]) == 2: # For simple edge lists:
             self._simple_init(edges)
@@ -102,16 +102,16 @@ class Graph(object):
         
         :rtype graphism.edge.Edge: The edge or None if it does not exist
         """
-        if parent in self.__edges and child in self.__edges[parent]:
-            return self.__edges[parent][child]
+        if parent in self._edges and child in self._edges[parent]:
+            return self._edges[parent][child]
         else:
             return None
 
     def add_node(self, name):
-        if name not in self.__nodes:
+        if name not in self._nodes:
             node = Node(name, graph=self)
-            self.__nodes[name] = node
-            self.__susceptible.add(node)
+            self._nodes[name] = node
+            self._susceptible.add(node)
 
     def add_edge(self, parent, child, weight=1.0, multiplicity=1L):
         """
@@ -130,15 +130,15 @@ class Graph(object):
         else:
             edge = Edge(parent, child, multiplicity=multiplicity, weight=weight, graph=self)
             
-            self.__edgelist.append(edge)
+            self._edgelist.append(edge)
             
             self.add_node(parent)
             self.add_node(child)
             
-            if parent in self.__edges:
-                self.__edges[parent][child] = edge
+            if parent in self._edges:
+                self._edges[parent][child] = edge
             else:
-                self.__edges[parent] = {child: edge}
+                self._edges[parent] = {child: edge}
         return edge
         
     def nodes(self):
@@ -147,7 +147,7 @@ class Graph(object):
         
         :rtype list(graphism.node.Node):
         """
-        return self.__nodes.values()
+        return self._nodes.values()
     
     def edge_dict(self):
         """
@@ -155,7 +155,7 @@ class Graph(object):
         
         :rtype dict(str=>dict(str=>graphism.edge.Edge)):
         """
-        return self.__edges
+        return self._edges
     
     def edges(self):
         """
@@ -163,31 +163,37 @@ class Graph(object):
         
         :rtype list(graphism.edge.Edge):
         """
-        return self.__edgelist
+        return self._edgelist
     
-    def infected(self):
+    def infected(self, infected=None):
         """
         Returns a unique set of infected nodes
         
         :rtype set(graphism.node.Node):
         """
-        return self.__infected
+        if infected:
+            self._infected = infected
+        return self._infected
 
-    def susceptible(self):
+    def susceptible(self, susceptible=None):
         """
         Returns a unique set of susceptible nodes
         
         :rtype set(graphism.node.Node):
         """
-        return self.__susceptible
+        if susceptible:
+            self._susceptible = susceptible
+        return self._susceptible
     
-    def recovered(self):
+    def recovered(self, recovered=None):
         """
         Returns a unique set of recovered nodes
         
         :rtype set(graphism.node.Node):
         """
-        return self.__recovered
+        if recovered:
+            self._recovered = recovered
+        return self._recovered
     
     def propagate(self):
         """
@@ -195,28 +201,28 @@ class Graph(object):
         
         :rtype None:
         """
-        for node in list(self.__infected):
-            edges = self.__edges[node.name]
+        for parent in list(self._infected):
+            edges = self._edges[parent.name]
             for child_name, edge in edges.items():
-                prob = self.__transmission_probability(edge)
+                prob = self._transmission_probability(edge)
                 if random.random() <= prob:
-                    child = self.__nodes[child_name]
-                    if child in self.__susceptible:
-                        self.__susceptible.remove(child)
-                        self.__infected.add(child)
+                    child = self._nodes[child_name]
+                    if child in self._susceptible:
+                        self._susceptible.remove(child)
+                        self._infected.add(child)
                         child.infect()
                         
-    def _infection(self):
+    def infection(self):
         """
         Returns the infection callback
         """
-        return self.__infection
+        return self._infection
     
-    def _recovery(self):
+    def recovery(self):
         """
         Returns the recovery callback
         """           
-        return self.__recovery
+        return self._recovery
     
     def set_transmission_probability(self, tp):
         """
@@ -225,7 +231,7 @@ class Graph(object):
         :param function tp: The transmission probability function. Takes an argument of type graphism.edge.Edge as the only argument. Returns a float on [0,1] indicating the probability of a transmission.
         
         """
-        self.__transmission_probability = tp
+        self._transmission_probability = tp
         
     def set_recovery_probability(self, rp):
         """
@@ -233,17 +239,17 @@ class Graph(object):
         
         :param function rp: The recovery probability function. Takes an argument of type graphism.node.Node as the only argument. Returns a float on [0,1] indicating the probability of a recovery.
         """
-        self.__recovery_probability = rp
+        self._recovery_probability = rp
         
     def recover(self):
         """
         Iterates over infected nodes allowing them to recover according to their probability of recovery.
         
         """
-        for node in list(self.__infected):
-            if random.random() <= self.__recovery_probability(node):
-                self.__infected.remove(node)
-                self.__recovered.add(node)
+        for node in list(self._infected):
+            if random.random() <= self._recovery_probability(node):
+                self._infected.remove(node)
+                self._recovered.add(node)
                 node.recover()
                 
     def set_infection(self, infection):
@@ -252,7 +258,7 @@ class Graph(object):
         
         :param function infection: The infection callback
         """
-        self.__infection = infection
+        self._infection = infection
         
     def set_recovery(self, recovery):
         """
@@ -260,7 +266,7 @@ class Graph(object):
         
         :param function recovery: The recovery callback
         """
-        self.__recovery = recovery
+        self._recovery = recovery
         
     def set_susceptibility(self, susceptibility):
         """
@@ -268,21 +274,21 @@ class Graph(object):
         
         :param function susceptibility: The function to execute on a node to indicate it is susceptible. Takes one argument of type graphism.node.Node
         """
-        self.__susceptibility = susceptibility
+        self._susceptibility = susceptibility
         
     def reset(self):
         """
         Moves all infected and recovered nodes back to 'susceptible' state.
         
         """
-        for node in list(self.__infected):
-            self.__susceptibility(node)
-            self.__infected.remove(node)
-            self.__susceptible.add(node)
-        for node in list(self.__recovered):
-            self.__susceptibility(node)
-            self.__recovered.remove(node)
-            self.__susceptible.add(node)
+        for node in list(self._infected):
+            self._susceptibility(node)
+            self._infected.remove(node)
+            self._susceptible.add(node)
+        for node in list(self._recovered):
+            self._susceptibility(node)
+            self._recovered.remove(node)
+            self._susceptible.add(node)
             
     def infect_seeds(self, seed_nodes):
         """
@@ -291,14 +297,14 @@ class Graph(object):
         :param list(graphism.node.Node) seed_nodes: The list of nodes to infect initially.
         """
         for node in seed_nodes:
-            if node in self.__susceptible:
-                self.__susceptible.remove(node)
-            elif node in self.__recovered:
-                self.__recovered.remove(node)
-            elif node in self.__infected:
+            if node in self._susceptible:
+                self._susceptible.remove(node)
+            elif node in self._recovered:
+                self._recovered.remove(node)
+            elif node in self._infected:
                 raise Exception("Attempting to infect an already infected node.")
             
-            self.__infected.add(node)
+            self._infected.add(node)
             node.infect()
             
     def save(self, filepath):

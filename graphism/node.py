@@ -22,20 +22,29 @@ class Node(object):
 
     def __getattr__(self, key):
         return self.graph.edge_dict()[self.name][key]
+        
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.name = state.get('name', None)
+        self.graph = state.get('graph', None)
+        self.children = state.get('children', set([]))
+        self.parents = state.get('parents', set([]))
 
     def infect(self):
         """
         Executes the callback function on the node after it becomes infected.
         
         """
-        self.graph._infection()(self)
+        self.graph.infection()(self)
         
     def recover(self):
         """
         Executes the callback function on the node after it recovers
         
         """
-        self.graph._recovery()(self)
+        self.graph.recovery()(self)
         
     def degree(self):
         """
