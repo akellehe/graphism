@@ -20,16 +20,26 @@ class Node(object):
         self.children = set([])
         self.parents = set([])
 
+    def __getattr__(self, key):
+        return self.graph.edge_dict()[self.name][key]
+
     def infect(self):
         """
         Executes the callback function on the node after it becomes infected.
         
         """
-        self.graph._infection(self)
+        self.graph._infection()(self)
         
     def recover(self):
         """
         Executes the callback function on the node after it recovers
         
         """
-        self.graph._recovery(self)
+        self.graph._recovery()(self)
+        
+    def degree(self):
+        """
+        Returns the number of outgoing edges.
+        
+        """
+        return long(len(self.children))

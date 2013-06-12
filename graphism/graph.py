@@ -54,6 +54,22 @@ class Graph(object):
     def _complex_init(self, edges):
         for edge_metadata in edges:
             self.add_edge(**edge_metadata)
+            
+    def __getitem__(self, key):
+        return self.__nodes[key]
+    
+    def _getstate(self):
+        return {'__nodes': self.__nodes,
+                '__edges': self.__edges,
+                '__susceptible': self.__susceptible,
+                '__infected': self.__infected,
+                '__recovered': self.__recovered,
+                '__directed': self.__directed,
+                '__transmission_probability': self.__transmission_probability,
+                '__recovery_probability': self.__recovery_probability,
+                '__infection': self.__infection,
+                '__susceptibility': self.__susceptibility,
+                '__edgelist': self.__edgelist }
     
     def __init__(self, edges, directed=False, transmission_probability=None, recovery_probability=None, infection=None, recovery=None, susceptibility=None):
         self.__nodes = {}
@@ -64,11 +80,11 @@ class Graph(object):
         self.__recovered = set([])
         
         self.__directed = directed
-        self.__transmission_probability = transmission_probability
-        self.__recovery_probability = recovery_probability
-        self.__infection = infection
-        self.__recovery = recovery
-        self.__susceptibility = susceptibility
+        self.__transmission_probability = transmission_probability or tp
+        self.__recovery_probability = recovery_probability or rp
+        self.__infection = infection or (lambda n: None)
+        self.__recovery = recovery or (lambda n: None)
+        self.__susceptibility = susceptibility or (lambda n: None)
         
         self.__edgelist = []
         
@@ -93,7 +109,9 @@ class Graph(object):
 
     def add_node(self, name):
         if name not in self.__nodes:
-            self.__nodes[name] = Node(name, graph=self)
+            node = Node(name, graph=self)
+            self.__nodes[name] = node
+            self.__susceptible.add(node)
 
     def add_edge(self, parent, child, weight=1.0, multiplicity=1L):
         """
@@ -130,6 +148,14 @@ class Graph(object):
         :rtype list(graphism.node.Node):
         """
         return self.__nodes.values()
+    
+    def edge_dict(self):
+        """
+        Returns the lookup dictionary for edges
+        
+        :rtype dict(str=>dict(str=>graphism.edge.Edge)):
+        """
+        return self.__edges
     
     def edges(self):
         """
@@ -169,10 +195,11 @@ class Graph(object):
         
         :rtype None:
         """
-        for node in self.__infected:
+        for node in list(self.__infected):
             edges = self.__edges[node.name]
             for child_name, edge in edges.items():
-                if self.__transmission_probability(edge) <= random.random():
+                prob = self.__transmission_probability(edge)
+                if random.random() <= prob:
                     child = self.__nodes[child_name]
                     if child in self.__susceptible:
                         self.__susceptible.remove(child)
@@ -213,8 +240,8 @@ class Graph(object):
         Iterates over infected nodes allowing them to recover according to their probability of recovery.
         
         """
-        for node in self.__infected:
-            if self.__recovery_probability(node) <= random.random():
+        for node in list(self.__infected):
+            if random.random() <= self.__recovery_probability(node):
                 self.__infected.remove(node)
                 self.__recovered.add(node)
                 node.recover()
@@ -251,9 +278,11 @@ class Graph(object):
         for node in list(self.__infected):
             self.__susceptibility(node)
             self.__infected.remove(node)
+            self.__susceptible.add(node)
         for node in list(self.__recovered):
             self.__susceptibility(node)
             self.__recovered.remove(node)
+            self.__susceptible.add(node)
             
     def infect_seeds(self, seed_nodes):
         """
@@ -262,6 +291,13 @@ class Graph(object):
         :param list(graphism.node.Node) seed_nodes: The list of nodes to infect initially.
         """
         for node in seed_nodes:
+            if node in self.__susceptible:
+                self.__susceptible.remove(node)
+            elif node in self.__recovered:
+                self.__recovered.remove(node)
+            elif node in self.__infected:
+                raise Exception("Attempting to infect an already infected node.")
+            
             self.__infected.add(node)
             node.infect()
             
@@ -272,3 +308,15 @@ class Graph(object):
         """
         with open(filepath, 'w+') as f:
             pickle.dump(self, f)
+            
+    def load(self, filepath):
+        """
+        Loads the graph from a file.
+        
+        """
+        with open(filepath, 'rb') as f:
+            target = pickle.load(f)
+            state = target._getstate()
+            for k, v in state.items():
+                setattr(self, k, v)
+            
