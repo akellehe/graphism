@@ -1,4 +1,6 @@
 import sys
+import pickle
+import random
 
 from graphism.node import Node
 from graphism.edge import Edge
@@ -13,21 +15,21 @@ class Graph(object):
     .. code-block:: python
     
         [(1,2),(2,3),...(1,4)]
-
-
-    as the first positional argument where valid keys are from_, to_, type_,
-    and weight_. Type and weight are optional.
+        
+    Or of the form
     
-    __init__ creates a node for each unique integer and adds the node to the graph.
+    .. code-block:: python
     
-    Possible keyword arguments are:
+        [{'parent': str,
+          'child': str,
+          'multiplicity': long,
+          'weight': float},...]
     
     :param bool directed: If set to False the graph will be undirected and transmissions can occur from child-to-parent as well as parent-to-child
-    :param function transmission_probability: The transmission probability function. Should take two arguments of type graphism.node.Node. The first positional argument is the parent (infection host), the second is the child. 
-    :param function recovery_probability: The recovery probability function. Should take a single objet of type graphism.node.Node. Returns a float on [0,1] indicating the probability of recovery for the node.
-    :param function infection: The callback function to execute when a new node is infected. Takes the node as the only argument.
-    :param function recovery: The callback function to execute when a node recovers from infection. Takes the node as the only argument.
-    :param list(dict) edges: You can optionally pass the graph as a keyword argument instead of the first positional argument.
+    :param function transmission_probability: The transmission probability function. Should take one argument of type graphism.edge.Edge and return a float on 0,1. 
+    :param function recovery_probability: The recovery probability function. Should take a single object of type graphism.node.Node. Returns a float on [0,1] indicating the probability of recovery for the node.
+    :param function infection: The callback function to execute when a new node is infected. Takes the node as the only argument. (type graphism.node.Node)
+    :param function recovery: The callback function to execute when a node recovers from infection. Takes the node as the only argument. (type graphism.node.Node)
     
     """
     __nodes = None
@@ -42,6 +44,7 @@ class Graph(object):
     __recovery_probability = None
     __infection = None
     __recovery = None
+    __susceptibility = None
     __edgelist = None
     
     def _simple_init(self, edges):
@@ -52,7 +55,7 @@ class Graph(object):
         for edge_metadata in edges:
             self.add_edge(**edge_metadata)
     
-    def __init__(self, edges, directed=False, transmission_probability=None, recovery_probability=None, infection=None, recovery=None):
+    def __init__(self, edges, directed=False, transmission_probability=None, recovery_probability=None, infection=None, recovery=None, susceptibility=None):
         self.__nodes = {}
         self.__edges = {}
 
@@ -65,6 +68,7 @@ class Graph(object):
         self.__recovery_probability = recovery_probability
         self.__infection = infection
         self.__recovery = recovery
+        self.__susceptibility = susceptibility
         
         self.__edgelist = []
         
@@ -134,3 +138,137 @@ class Graph(object):
         :rtype list(graphism.edge.Edge):
         """
         return self.__edgelist
+    
+    def infected(self):
+        """
+        Returns a unique set of infected nodes
+        
+        :rtype set(graphism.node.Node):
+        """
+        return self.__infected
+
+    def susceptible(self):
+        """
+        Returns a unique set of susceptible nodes
+        
+        :rtype set(graphism.node.Node):
+        """
+        return self.__susceptible
+    
+    def recovered(self):
+        """
+        Returns a unique set of recovered nodes
+        
+        :rtype set(graphism.node.Node):
+        """
+        return self.__recovered
+    
+    def propagate(self):
+        """
+        Iterates over all infected nodes and propagates an infection according to the probability of transmission function operating on each edge between that infected node and a susceptible node.
+        
+        :rtype None:
+        """
+        for node in self.__infected:
+            edges = self.__edges[node.name]
+            for child_name, edge in edges.items():
+                if self.__transmission_probability(edge) <= random.random():
+                    child = self.__nodes[child_name]
+                    if child in self.__susceptible:
+                        self.__susceptible.remove(child)
+                        self.__infected.add(child)
+                        child.infect()
+                        
+    def _infection(self):
+        """
+        Returns the infection callback
+        """
+        return self.__infection
+    
+    def _recovery(self):
+        """
+        Returns the recovery callback
+        """           
+        return self.__recovery
+    
+    def set_transmission_probability(self, tp):
+        """
+        Sets the transmission probability function for the graph.
+        
+        :param function tp: The transmission probability function. Takes an argument of type graphism.edge.Edge as the only argument. Returns a float on [0,1] indicating the probability of a transmission.
+        
+        """
+        self.__transmission_probability = tp
+        
+    def set_recovery_probability(self, rp):
+        """
+        Sets the recovery probability function for the graph.
+        
+        :param function rp: The recovery probability function. Takes an argument of type graphism.node.Node as the only argument. Returns a float on [0,1] indicating the probability of a recovery.
+        """
+        self.__recovery_probability = rp
+        
+    def recover(self):
+        """
+        Iterates over infected nodes allowing them to recover according to their probability of recovery.
+        
+        """
+        for node in self.__infected:
+            if self.__recovery_probability(node) <= random.random():
+                self.__infected.remove(node)
+                self.__recovered.add(node)
+                node.recover()
+                
+    def set_infection(self, infection):
+        """
+        Setter for the infection callback function. Executes on a node when it's infected.
+        
+        :param function infection: The infection callback
+        """
+        self.__infection = infection
+        
+    def set_recovery(self, recovery):
+        """
+        Setter for the recovery callback function. Executes on a node when it recovers.
+        
+        :param function recovery: The recovery callback
+        """
+        self.__recovery = recovery
+        
+    def set_susceptibility(self, susceptibility):
+        """
+        Sets the method to execute on a node to put it back in 'susceptible' state. e.g. If you decorated a node to indicate infection or recovery, you would clean it up here.
+        
+        :param function susceptibility: The function to execute on a node to indicate it is susceptible. Takes one argument of type graphism.node.Node
+        """
+        self.__susceptibility = susceptibility
+        
+    def reset(self):
+        """
+        Moves all infected and recovered nodes back to 'susceptible' state.
+        
+        """
+        for node in list(self.__infected):
+            self.__susceptibility(node)
+            self.__infected.remove(node)
+        for node in list(self.__recovered):
+            self.__susceptibility(node)
+            self.__recovered.remove(node)
+            
+    def infect_seeds(self, seed_nodes):
+        """
+        Infects the given set of seed nodes.
+        
+        :param list(graphism.node.Node) seed_nodes: The list of nodes to infect initially.
+        """
+        for node in seed_nodes:
+            self.__infected.add(node)
+            node.infect()
+            
+    def save(self, filepath):
+        """
+        Saves the graph to a file.
+        
+        """
+        with open(filepath, 'w+') as f:
+            pickle.dump(self, f)

@@ -19,3 +19,17 @@ class Node(object):
         self.graph = graph
         self.children = set([])
         self.parents = set([])
+
+    def infect(self):
+        """
+        Executes the callback function on the node after it becomes infected.
+        
+        """
+        self.graph._infection(self)
+        
+    def recover(self):
+        """
+        Executes the callback function on the node after it recovers
+        
+        """
+        self.graph._recovery(self)
