@@ -56,7 +56,7 @@ def choose_nodes(g, m):
     for node in g.nodes():
         tot_deg += node.degree()
       
-    probs = [ (node.name(), float( node.degree()) / float( tot_deg) )  for node in g.nodes() ] # calculate node selection probabilities based on degree
+    probs = [ (node.name, float( node.degree()) / float( tot_deg) )  for node in g.nodes() ] # calculate node selection probabilities based on degree
     cdf = [ 0 ] # cumulative distribution function of node probability list, to be calculated
     for i, dat in enumerate( probs ):
         p_i = dat[ 1 ] 

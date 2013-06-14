@@ -86,6 +86,8 @@ class Graph(object):
         self._recovery = recovery or return_none_from_one
         self._susceptibility = susceptibility or return_none_from_one
         
+        self._undirected_reciprocals = {} # Reciprocal edges for undirected graphs.
+        
         self._edgelist = []
         
         if len(edges[0]) == 2: # For simple edge lists:
@@ -139,6 +141,14 @@ class Graph(object):
                 self._edges[parent][child] = edge
             else:
                 self._edges[parent] = {child: edge}
+        
+        if not self._directed:
+            recip = Edge(child, parent, multiplicity=multiplicity, weight=weight, graph=self)
+            if child in self._undirected_reciprocals:
+                self._undirected_reciprocals[child][parent] = recip
+            else:
+                self._undirected_reciprocals[child] = {parent: edge}
+                        
         return edge
         
     def nodes(self):
@@ -203,6 +213,8 @@ class Graph(object):
         """
         for parent in list(self._infected):
             edges = self._edges[parent.name]
+            if not self._directed:
+                edges.update(self._undirected_reciprocals[parent.name])
             for child_name, edge in edges.items():
                 prob = self._transmission_probability(edge)
                 if random.random() <= prob:
