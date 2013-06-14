@@ -37,7 +37,7 @@ def barabasi_albert( m, n, seed_graph=None ):
         
         BA_graph.add_node( new_node )
         for edge_to in new_edges_to:
-            BA_graph.add_edge_by_node_sequence( new_node.name() , edge_to )
+            BA_graph.add_edge( new_node.name, edge_to )
             
     return BA_graph
         

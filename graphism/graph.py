@@ -338,3 +338,15 @@ class Graph(object):
             for k, v in state.items():
                 setattr(self, k, v)
             
+            
+    def get_degree(self, node_name):
+        degree = 0L
+        edges = self._edges[node_name]
+        if not self._directed:
+            edges.update(self._undirected_reciprocals[node_name])
+        for name, edge in edges.items():
+            print edge
+            degree += edge.multiplicity
+        if not self._directed:
+            return degree / 2L
+        return degree

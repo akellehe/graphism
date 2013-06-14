@@ -51,4 +51,4 @@ class Node(object):
         Returns the number of outgoing edges.
         
         """
-        return long(len(self.children))
+        return long(self.graph.get_degree(self.name))
