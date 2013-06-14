@@ -163,3 +163,22 @@ class GraphTest(TestApi):
         assert len(a.nodes()) == len(g.nodes())
         assert len(a.infected()) > 35 and len(a.infected()) < 65, len(a.infected())
         assert len(a.recovered()) > 35 and len(a.recovered()) < 65, len(a.recovered())        
+        
+    def test_multiplicity_increases_when_adding_multiple_edges(self):
+        edges = [(1,2),(2,3),(1,3),(1,4),(4,5)]
+        g = Graph(edges)
+        
+        g.add_edge(4,5)
+        
+        assert len(g.edges()) == 5
+        assert g.edge(4,5).multiplicity == 2
+        
+    def test_add_graph(self):
+        A = Graph([(1,2),(2,3),(1,3)])
+        B = Graph([(2,1),(2,3),(1,4)])
+        
+        A.add_graph(B)
+        
+        assert len(A.edges()) == 5
+        assert A.edge(2,3).multiplicity == 2L
+        assert len(A.nodes()) == 4
