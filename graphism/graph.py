@@ -325,4 +325,17 @@ class Graph(object):
             state = target._getstate()
             for k, v in state.items():
                 setattr(self, k, v)
+                
+    def add_graph(self, subgraph):
+        """
+        Adds a subgraph to the existing graph. If a node exists in subgraph not in self, it is created. If a node exists in subgraph as well as self the edges are added. If there are duplicate edges in subgraph, the edges in self have their multiplicity increased.
+        
+        :param graphism.graph.Graph subgraph: The subgraph to add to the existing graph.
+        
+        :rtype None:
+        """
+        for edge in subgraph.edges():
+            self.add_edge(**edge.to_dict())
+            
+    
             

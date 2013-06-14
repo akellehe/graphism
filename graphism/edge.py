@@ -25,3 +25,13 @@ class Edge(object):
                 
     def __str__(self):
         return "<%s -> %s>" % (self.parent, self.child)
+    
+    def to_dict(self):
+        """
+        Exports the edge as a dictionary.
+        
+        """
+        return {'parent': self.parent,
+                'child': self.child,
+                'multiplicity': self.multiplicity,
+                'weight': self.weight }
