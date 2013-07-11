@@ -255,27 +255,54 @@ class Graph(object):
         
         """
         self.__infected[node.name()] = node
-        
+
+    def add_susceptible(self, node):
+        """
+        Adds a node to the list of susceptible nodes
+
+        """
+        self.__susceptible[node.name()] = node
+
     def add_recovered(self, node):
         """
         Adds a node to the list of recovered nodes
         
         """
         self.__recovered[node.name()] = node
-        
+
     def remove_infected(self, node):
         """
         Removes a node from the list of infected nodes
         
         """
         del self.__infected[node.name()]
-            
+
     def remove_susceptible(self, node):
         """
         Removes a node from the list of susceptible nodes.
         
         """
         del self.__susceptible[node.name()]
+    
+    def remove_recovered(self, node):
+        """
+        Removes a node from the list of recovered nodes
+
+        """
+        del self.__recovered[node.name()]
+
+    def reset(self):
+        """
+        Resets graph to a state where all nodes are susceptible.
+
+        """
+        for node in self.recovered():
+            self.add_susceptible(node)
+            self.remove_recovered(node)
+
+        for node in self.infected():
+            self.add_susceptible(node)
+            self.remove_infected(node)
     
     def nodes(self):
         """
