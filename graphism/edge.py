@@ -68,3 +68,11 @@ class Edge(object):
 
     def length(self):
         return self.__length(self)
+
+    def edge_to_tuple(self):
+        """
+        Returns a tuple containing the names of a given edge's parent and child nodes.
+
+        :rtype tuple: A two-item tuple containing the names of the edge's parent and child nodes.
+        """
+        return (self.parent.name(), self.child.name())
